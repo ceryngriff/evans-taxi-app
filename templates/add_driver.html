@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add New Driver</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <a href="{{ url_for('manager_dashboard') }}" class="back-link">← Return to Dashboard</a>
+</head>
+<body>
+    <div class="container">
+        <h1>Add New Driver</h1>
+        <form method="POST">
+            <label for="name">Name:</label>
+            <input type="text" name="name" required>
+
+            <label for="phone">Phone Number:</label>
+            <input type="text" name="phone" required>
+
+            <label for="badge_renewal_date">Badge Renewal Date:</label>
+            <input type="date" name="badge_renewal_date" required>
+
+            <label for="postcode">Postcode:</label>
+            <input type="text" name="postcode" required>
+
+            <label for="username">Username:</label>
+            <input type="text" name="username" required>
+
+            <label for="password">Password:</label>
+            <input type="password" name="password" required>
+
+            <label for="shift">Shift:</label>
+            <select name="shift" required>
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+                <option value="Both" selected>Both</option>
+            </select>
+
+            <button type="submit">Add Driver</button>
+        </form>
+    </div>
+</body>
+</html>

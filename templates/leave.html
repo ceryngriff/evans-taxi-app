@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Leave</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Leave Management</h1>
+
+        <!-- 📋 Add New Leave -->
+        <div class="form-section">
+            <h2>Add Leave</h2>
+            <form method="POST">
+                <label>Type:</label>
+                <select name="person_type" required>
+                    <option value="driver">Driver</option>
+                    <option value="escort">Escort</option>
+                </select><br><br>
+
+                <label>Name:</label>
+                <select name="person_id" required>
+                    <optgroup label="Drivers">
+                        {% for driver in drivers %}
+                            <option value="{{ driver.id }}">{{ driver.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    <optgroup label="Escorts">
+                        {% for escort in escorts %}
+                            <option value="{{ escort.id }}">{{ escort.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                </select><br><br>
+
+                <label>Start Date:</label>
+                <input type="date" name="start_date" required><br><br>
+
+                <label>End Date:</label>
+                <input type="date" name="end_date" required><br><br>
+
+                <label>Reason (optional):</label>
+                <input type="text" name="reason"><br><br>
+
+                <button type="submit">Submit Leave</button>
+            </form>
+        </div>
+
+        <!-- 📅 Leave Records -->
+        <div class="record-section">
+            <h2>Leave Records</h2>
+            {% if leave_records %}
+                <ul>
+                    {% for leave in leave_records %}
+                        <li>
+                            {% if leave.person_type == 'driver' %}
+                                Driver: {{ (drivers | selectattr('id', 'equalto', leave.person_id) | first).name }}
+                            {% else %}
+                                Escort: {{ (escorts | selectattr('id', 'equalto', leave.person_id) | first).name }}
+                            {% endif %}
+                            — {{ leave.start_date }} to {{ leave.end_date }}
+                            {% if leave.reason %} ({{ leave.reason }}){% endif %}
+
+                            <!-- ✏️ Edit -->
+                            <a href="{{ url_for('edit_leave', leave_id=leave.id) }}">Edit</a>
+
+                            <!-- 🗑️ Delete -->
+                            <form action="{{ url_for('delete_leave', leave_id=leave.id) }}" method="POST" style="display:inline;">
+                                <button type="submit" onclick="return confirm('Delete this leave record?')">Delete</button>
+                            </form>
+                        </li>
+                        <a href="{{ url_for('admin_leave_requests') }}">Leave requests</a>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No leave records found.</p>
+            {% endif %}
+        </div>
+
+        <br><a href="{{ url_for('manager_dashboard') }}">← Back to Dashboard</a>
+    </div>
+</body>
+</html>
+
+

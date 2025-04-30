@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>🛠️ Add New Mechanic</h2>
+<a href="{{ url_for('manager_dashboard') }}" class="back-link">← Return to Dashboard</a>
+<form method="POST">
+  <label>Name</label>
+  <input type="text" name="name" required><br><br>
+
+  <label>Username</label>
+  <input type="text" name="username" required><br><br>
+
+  <label>Password</label>
+  <input type="password" name="password" required><br><br>
+
+  <button type="submit">Add Mechanic</button>
+</form>
+{% endblock %}

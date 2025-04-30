@@ -1,0 +1,19 @@
+<h2>Quote History</h2>
+<table border="1">
+    <tr>
+        <th>Date</th>
+        <th>Vehicle</th>
+        <th>Tariff</th>
+        <th>Mileage</th>
+        <th>Total</th>
+    </tr>
+    {% for q in quotes %}
+    <tr>
+        <td>{{ q.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td>{{ q.vehicle_type }}</td>
+        <td>{{ q.tariff }}</td>
+        <td>{{ q.mileage }} miles</td>
+        <td>£{{ q.total_price }}</td>
+    </tr>
+    {% endfor %}
+</table>

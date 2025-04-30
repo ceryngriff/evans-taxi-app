@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <a href="{{ url_for('manager_dashboard') }}" class="back-link">← Return to Dashboard</a>
+  <h2>🔧 View Mechanic Jobs</h2>
+
+  <table class="table table-striped mt-3">
+    <thead>
+      <tr>
+        <th>Mechanic</th>
+        <th>Vehicle</th>
+        <th>Description</th>
+        <th>Status</th> 
+      </tr>
+    </thead>
+    <tbody>
+      {% for job in jobs %}
+        <tr>
+          <td>{{ job.mechanic.username }}</td>
+          <td>{{ job.vehicle.registration }} - {{ job.vehicle.make_model }}</td>
+          <td>{{ job.job_description }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('mechanic.toggle_job_status', job_id=job.id) }}">
+              <input type="checkbox" name="status" onchange="this.form.submit()" {% if job.status == 'Completed' %}checked{% endif %}>
+              <span class="ms-2">{{ job.status }}</span>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>All Escorts</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>All Escorts</h1>
+        <a href="{{ url_for('add_escort') }}" class="btn">+ Add New Escort</a>
+
+        {% if escorts %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Address</th>
+                        <th>Username</th>
+                        <th>Password</th>
+                        <th>Actions</th>
+                        <th>Postcode</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for escort in escorts %}
+                    <tr>
+                        <td>{{ escort.name }}</td>
+                        <td>{{ escort.phone }}</td>
+                        <td>{{ escort.address }}</td>
+                        <td>{{ escort.username }}</td>
+                        <td>{{ escort.password }}</td>
+                        <td>{{ escort.base_postcode }}</td>
+                        <td>
+                            <a href="{{ url_for('edit_escort', escort_id=escort.id) }}" class="btn">Edit</a>
+                            <form action="{{ url_for('delete_escort', escort_id=escort.id) }}" method="POST" style="display:inline;">
+                                <button type="submit" onclick="return confirm('Are you sure?')" class="btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No escorts found.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

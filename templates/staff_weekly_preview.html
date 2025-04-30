@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Weekly Preview{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="text-2xl font-bold mb-4">📅 Weekly Preview</h1>
+    <a href="{{ url_for('staff_dashboard') }}">← Back to Dashboard</a>
+
+    {% for day, allocs in week_allocations.items() %}
+        <div class="day-preview mt-4">
+            <h3 class="font-semibold">{{ day.strftime('%A, %d %B') }}</h3>
+            {% if allocs %}
+                {% for alloc in allocs %}
+                    <div class="shift-card {{ alloc.driver_shift|lower }}">
+                        <h4>{{ alloc.contract.contract_number }} – {{ alloc.contract.school_name }}</h4>
+
+                        {% for child in alloc.contract.children %}
+                            <p><strong>Child:</strong> {{ child.name }}</p>
+                            {% if alloc.driver_shift == 'AM' %}
+                                <p>🏠 Pickup: {{ child.address }}</p>
+                                <p>⏰ Start: {{ alloc.contract.school_start_time.strftime('%H:%M') }}</p>
+                            {% elif alloc.driver_shift == 'PM' %}
+                                <p>⏰ Finish: {{ alloc.contract.school_finish_time.strftime('%H:%M') }}</p>
+                                <p>🚗 Drop-off: {{ child.address }}</p>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if alloc.repeat_all_week %}
+                            <p><em>🔁 Repeats weekly on: {{ alloc.contract_days.replace(',', ', ') }}</em></p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No runs scheduled.</p>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

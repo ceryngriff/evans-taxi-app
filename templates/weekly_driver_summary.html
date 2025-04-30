@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>🗓️ Weekly Driver Route Summary</h2>
+<a href="{{ url_for('manager_dashboard') }}" class="back-link">← Return to Dashboard</a>
+<p>Showing data from <strong>{{ start }}</strong> to <strong>{{ end }}</strong></p>
+<hr>
+
+{% if summary %}
+  <table>
+    <thead>
+      <tr>
+        <th>Driver</th>
+        <th>Total Distance (km)</th>
+        <th>Estimated Fuel Cost (£)</th>
+        <th>Days Worked</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for driver_name, data in summary.items() %}
+        <tr>
+          <td>{{ driver_name }}</td>
+          <td>{{ data.distance }}</td>
+          <td>£{{ data.fuel }}</td>
+          <td>
+            {% for d in data.days %}
+              {{ d.strftime("%A %d %b") }}<br>
+            {% endfor %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>No allocations found for this week.</p>
+{% endif %}
+
+<a href="{{ url_for('manager_dashboard') }}" class="btn">⬅ Back to Dashboard</a>
+{% endblock %}

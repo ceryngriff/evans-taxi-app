@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Route Calculation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            padding: 30px;
+            background-color: #fdfdfd;
+        }
+        label {
+            font-weight: bold;
+        }
+        input, select, button {
+            padding: 5px;
+            margin-bottom: 10px;
+            width: 200px;
+        }
+        button {
+            padding: 8px 16px;
+            font-weight: bold;
+        }
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Calculate Route Distance</h1>
+    <form id="route-form">
+        <label for="driver-postcode">Driver Postcode:</label>
+        <input type="text" id="driver-postcode" required><br>
+
+        <label for="children-postcodes">Children's Postcodes (comma separated):</label>
+        <input type="text" id="children-postcodes" required><br>
+
+        <label for="school-postcode">School Postcode:</label>
+        <input type="text" id="school-postcode" required><br>
+
+        <label for="escort-postcode">Escort Postcode (Optional):</label>
+        <input type="text" id="escort-postcode"><br>
+
+        <button type="submit">Calculate Route</button>
+    </form>
+
+    <div class="result" id="result"></div>
+
+    <script>
+        document.getElementById('route-form').addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            const driverPostcode = document.getElementById('driver-postcode').value;
+            const childrenPostcodes = document.getElementById('children-postcodes').value.split(',');
+            const schoolPostcode = document.getElementById('school-postcode').value;
+            const escortPostcode = document.getElementById('escort-postcode').value || null;
+
+            const data = {
+                driver_postcode: driverPostcode,
+                children_postcodes: childrenPostcodes,
+                school_postcode: schoolPostcode,
+                escort_postcode: escortPostcode
+            };
+
+            try {
+                const response = await fetch('/calculate_route', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                document.getElementById('result').textContent = `Total distance: ${result.total_distance} km`;
+            } catch (error) {
+                console.error('Error calculating route:', error);
+                document.getElementById('result').textContent = 'Failed to calculate the route. Please try again.';
+            }
+        });
+    </script>
+
+</body>
+</html>

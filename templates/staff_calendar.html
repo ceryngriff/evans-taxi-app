@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stark-Style Responsive Calendar</title>
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      --accent: #00ffff;
+      --accent-soft: rgba(0, 255, 255, 0.15);
+      --school-day: rgba(0, 255, 127, 0.1);
+      --leave-day: rgba(255, 215, 0, 0.15);
+      --non-school-day: rgba(255, 99, 71, 0.15);
+      --inset-day: rgba(100, 149, 237, 0.15);
+      --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-main);
+      background: var(--bg-gradient);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .calendar-container {
+      width: 95%;
+      max-width: 1600px;
+      margin: 2rem auto;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: 2rem;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 40px rgba(0, 255, 255, 0.2);
+    }
+
+    .calendar-header {
+      text-align: center;
+      font-size: 3rem;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+      text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    }
+
+    .calendar-nav {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .calendar-nav a {
+      color: var(--accent);
+      margin: 0 1rem;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 1.1rem;
+      transition: 0.2s;
+    }
+
+    .calendar-nav a:hover {
+      color: #fff;
+      text-shadow: 0 0 8px var(--accent);
+    }
+
+    .calendar {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .calendar th, .calendar td {
+      width: 14.28%;
+      padding: 1rem;
+      text-align: left;
+      vertical-align: top;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      transition: all 0.3s;
+    }
+
+    .calendar th {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--accent);
+      font-size: 1rem;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .calendar td:hover {
+      background: var(--accent-soft);
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+      transform: scale(1.02);
+    }
+
+    .day-number {
+      color: #ffffff;
+      font-weight: bold;
+      font-size: 1.2rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .calendar td a {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+    }
+
+    .calendar td a:visited {
+      color: inherit;
+    }
+
+    .term-day { background-color: var(--school-day); }
+    .leave-day { background-color: var(--leave-day); }
+    .non-school-day { background-color: var(--non-school-day); }
+    .inset-day { background-color: var(--inset-day); }
+
+    .emoji-label {
+      display: block;
+      font-size: 0.85rem;
+      margin-top: 0.3rem;
+      color: #ccc;
+    }
+
+    @media (max-width: 768px) {
+      .calendar th, .calendar td {
+        padding: 0.5rem;
+        font-size: 0.85rem;
+      }
+      .calendar-header {
+        font-size: 2rem;
+      }
+      .day-number {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="calendar-container">
+    <div class="calendar-header">
+      {{ calendar_module.month_name[month] }} {{ year }}
+    </div>
+
+    <div class="calendar-nav">
+      <a href="{{ url_for('staff_calendar', month=month-1 if month > 1 else 12, year=year-1 if month == 1 else year) }}">⬅️ Previous</a>
+      <a href="{{ url_for('staff_calendar', month=month+1 if month < 12 else 1, year=year+1 if month == 12 else year) }}">Next ➡️</a>
+    </div>
+
+    <div class="calendar-wrapper">
+      <table class="calendar">
+        <thead>
+          <tr>
+            <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for week in calendar %}
+            <tr>
+              {% for day in week %}
+                {% if day == 0 %}
+                  <td class="calendar-day empty"></td>
+                {% else %}
+                  {% set cell_class = '' %}
+                  {% set date_obj = date(year, month, day) %}
+                  {% if date_obj in non_school_days %}
+                    {% set cell_class = 'non-school-day' %}
+                  {% elif date_obj in inset_dates %}
+                    {% set cell_class = 'inset-day' %}
+                  {% elif date_obj in leave_dates %}
+                    {% set cell_class = 'leave-day' %}
+                  {% elif date_obj in term_dates %}
+                    {% set cell_class = 'term-day' %}
+                  {% endif %}
+
+                  <td class="calendar-day {{ cell_class }}">
+                    <a href="{{ url_for('view_staff_schedule_day', date_str=date(year, month, day).strftime('%Y-%m-%d')) }}">
+                      <div class="day-number">{{ day }}</div>
+
+                      {% if date_obj in term_dates %}
+                        <span class="emoji-label">📘 School Day</span>
+                      {% endif %}
+                      {% if date_obj in inset_dates %}
+                        <span class="emoji-label">🚰 Inset Day</span>
+                        {% for entry in inset_entries if entry.date == date_obj %}
+                          <span class="emoji-label">🏫 {{ entry.school_name }}</span>
+                        {% endfor %}
+                      {% endif %}
+                      {% if date_obj in non_school_days %}
+                        <span class="emoji-label">⛔ Not in School</span>
+                      {% endif %}
+                      {% if date_obj in leave_dates %}
+                        <span class="emoji-label">🌴 Annual Leave</span>
+                      {% endif %}
+                    </a>
+                  </td>
+                {% endif %}
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

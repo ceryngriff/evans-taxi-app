@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Schedule for {{ selected_date }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='schedule_day.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Schedule for {{ selected_date }}</h1>
+
+        <!-- Search Bar -->
+<form method="GET" action="{{ url_for('search_schedule_redirect') }}">
+    <label>Select a date:</label>
+    <input type="date" name="date" required>
+
+    <label>Search by staff name:</label>
+    <input type="text" name="search" placeholder="Driver or Escort name" value="{{ search_query }}">
+
+    <button type="submit">View Schedule</button>
+</form>
+
+        <hr>
+
+        {% if allocations %}
+            {% set sorted_allocs = allocations|sort(attribute='driver_shift') %}
+            {% for alloc in sorted_allocs %}
+                <div class="shift-card {{ alloc.driver_shift|lower if alloc.driver_shift else '' }} {% if not alloc.driver %}missing-driver{% elif not alloc.escort %}missing-escort{% endif %}">
+                    <h3>{{ alloc.contract.contract_number }} – {{ alloc.contract.school_name }}</h3>
+
+                    {% if alloc.contract and alloc.contract.children %}
+                        {% for child in alloc.contract.children %}
+                            <p><strong>Child:</strong> {{ child.name }}</p>
+                            {% if alloc.driver_shift == 'AM' %}
+                                <p><span aria-label="House">🏠</span> Pickup Address: {{ child.address }}</p>
+                                <p><span aria-label="Clock">⏰</span> School Start Time: {{ alloc.contract.school_start_time.strftime('%H:%M') }}</p>
+                            {% elif alloc.driver_shift == 'PM' %}
+                                <p><span aria-label="Clock">⏰</span> School Finish Time: {{ alloc.contract.school_finish_time.strftime('%H:%M') }}</p>
+                                <p><span aria-label="Car">🚗</span> Drop-off Address: {{ child.address }}</p>
+                            {% endif %}
+                            <hr>
+                        {% endfor %}
+                    {% endif %}
+
+                    {% if alloc.driver %}
+                        <p><strong>Driver:</strong> {{ alloc.driver.name }}</p>
+                    {% else %}
+                        <p class="text-red"><strong>⚠️ No driver assigned</strong></p>
+                    {% endif %}
+
+                    {% if alloc.escort %}
+                        <p><strong>Escort:</strong> {{ alloc.escort.name }}</p>
+                        {% if alloc.escort.address %}
+                            <p><strong>Escort Address:</strong> {{ alloc.escort.address }}</p>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-orange"><strong>⚠️ No escort assigned</strong></p>
+                    {% endif %}
+
+                    {% if alloc.repeat_all_week %}
+                        <p><em>🔁 Repeats weekly on: {{ alloc.contract_days.replace(',', ', ') }}</em></p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No allocations for this day.</p>
+        {% endif %}
+
+        
+
+        <br>
+        <a href="{{ url_for('staff_calendar') }}">← Back to Calendar</a>
+    </div>
+</body>
+</html>

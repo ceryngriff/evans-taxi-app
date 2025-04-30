@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Unallocated Contracts</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 20px;
+    }
+    form {
+      margin-bottom: 30px;
+    }
+    label {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    select, input[type="date"] {
+      padding: 5px;
+      margin-right: 15px;
+    }
+    .contract-box {
+      border: 1px solid ;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+      background-color: #060505;
+    }
+    .contract-box strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+    .allocation-form {
+      margin-top: 10px;
+    }
+    .allocation-form select, .allocation-form button {
+      margin-right: 10px;
+    }
+
+
+  </style>
+</head>
+<body>
+  <a href="{{ url_for('index') }}" class="back-link">← Return to Dashboard</a>
+
+  <h1>Unallocated Contracts</h1>
+
+  <!-- Filter Form -->
+  <form method="GET" action="{{ url_for('unallocated_contracts') }}">
+    <label for="selected_date">Select Date:</label>
+    <input type="date" id="selected_date" name="date" value="{{ selected_date }}" required>
+
+    <label for="shift">Select Shift:</label>
+    <select id="shift" name="shift">
+      <option value="AM" {% if selected_shift == 'AM' %}selected{% endif %}>AM</option>
+      <option value="PM" {% if selected_shift == 'PM' %}selected{% endif %}>PM</option>
+    </select>
+
+    <button type="submit">Filter</button>
+  </form>
+
+  <h2>Unallocated Contracts for {{ selected_date }} – {{ selected_shift }}</h2>
+
+  {% if unallocated %}
+    {% for item in unallocated %}
+      <div class="contract-box">
+        <strong>{{ item.contract_number }}</strong> – {{ item.school_name }}<br>
+        Child: {{ item.child_name }}<br>
+        Time: {{ item.school_start }} - {{ item.school_end }}<br>
+        Required Vehicle: {{ item.required_vehicle_size }}
+
+        <form method="POST" action="{{ url_for('driverallocation') }}" class="allocation-form">
+          <input type="hidden" name="contract_id" value="{{ item.id }}">
+          <input type="hidden" name="contract_number" value="{{ item.contract_number }}">
+          <input type="hidden" name="contract_date" value="{{ selected_date }}">
+          <input type="hidden" name="driver_shift" value="{{ selected_shift }}">
+          <input type="hidden" name="escort_shift" value="{{ selected_shift }}">
+          <input type="hidden" name="source" value="unallocated">
+
+          <label for="driver">Driver:</label>
+          <select name="driver_id" required>
+            <option value="">-- Select Driver --</option>
+            {% for driver in drivers %}
+              <option value="{{ driver.id }}">{{ driver.name }}</option>
+            {% endfor %}
+          </select>
+
+          <label for="escort">Escort:</label>
+          <select name="escort_id">
+            <option value="">-- Optional --</option>
+            {% for escort in escorts %}
+              <option value="{{ escort.id }}">{{ escort.name }}</option>
+            {% endfor %}
+          </select>
+
+          <button type="submit">Allocate</button>
+        </form>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p>✅ All contracts are allocated for this date and shift.</p>
+  {% endif %}
+
+</body>
+</html>

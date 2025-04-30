@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block title %}Manager Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mb-4">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Evans Taxis – Manager Dashboard</h1>
+    <!-- 🗺️ Live Driver Map -->
+<div class="info-box">
+    <h2 class="text-xl font-semibold text-gray-700 mb-3">🗺️ Live Driver Locations</h2>
+    <div id="driverMap" style="height: 500px;"></div>
+</div>
+
+<!-- Leaflet.js CDN -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+
+<script>
+    const map = L.map('driverMap').setView([53.48, -2.24], 11);  // Example: Manchester
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    fetch('/api/driver-locations')
+        .then(response => response.json())
+        .then(locations => {
+            locations.forEach(loc => {
+                L.marker([loc.lat, loc.lng])
+                    .addTo(map)
+                    .bindPopup(`Driver ID: ${loc.driver_id}<br>Time: ${loc.timestamp}`);
+            });
+        })
+        .catch(err => console.error("Map fetch error:", err));
+</script>
+    
+
+    <!-- ⚠️ Missed Runs Today -->
+    <div class="info-box">
+        <h2>⚠️ Missed Runs Today</h2>
+        {% if runs %}
+            <table class="styled-table">
+                <thead>
+                    <tr>
+                        <th>Staff</th>
+                        <th>Shift</th>
+                        <th>Contract</th>
+                        <th>Reason</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for run in runs %}
+                        <tr>
+                            <td>{{ run.staff_name }}</td>
+                            <td>{{ run.shift }}</td>
+                            <td>{{ run.contract_number }}</td>
+                            <td>{{ run.reason }}</td>
+                            <td>{{ run.date }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>✅ All runs completed today.</p>
+        {% endif %}
+    </div>
+
+    <!-- 🌿 Upcoming Leave Section -->
+    <div class="info-box">
+        <h2 class="text-xl font-semibold text-gray-700 mb-3">📅 Upcoming Leave (Next Week)</h2>
+        {% if upcoming_leave %}
+            <ul class="list-disc list-inside text-gray-700">
+                {% for leave in upcoming_leave %}
+                    <li>
+                        {{ leave.person_type.title() }}: 
+                        {% if leave.person_type == 'driver' %}
+                            {{ drivers | selectattr("id", "equalto", leave.person_id) | map(attribute="name") | list | first }}
+                        {% else %}
+                            {{ escorts | selectattr("id", "equalto", leave.person_id) | map(attribute="name") | list | first }}
+                        {% endif %}
+                        — {{ leave.start_date }} to {{ leave.end_date }} ({{ leave.reason or "No reason given" }})
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-gray-600">No upcoming leave scheduled.</p>
+        {% endif %}
+    </div>
+
+    <!-- 🚐 Vehicle Checks -->
+    <div class="info-box">
+        <h2 class="text-xl font-semibold text-gray-700 mb-3">🚌 Upcoming Vehicle Maintenance</h2>
+        {% if upcoming_vehicle_checks %}
+            <ul class="list-disc list-inside text-gray-700">
+                {% for vehicle in upcoming_vehicle_checks %}
+                    <li>
+                        {{ vehicle.registration }} — MOT: {{ vehicle.mot_renewal_date or 'N/A' }} |
+                        Plate: {{ vehicle.plate_expiry_date or 'N/A' }} |
+                        Tax: {{ vehicle.tax_expiry_date or 'N/A' }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-gray-600">No upcoming vehicle checks.</p>
+        {% endif %}
+    </div>
+    <h3>🚨 Vehicle Checks Not Completed Today</h3>
+    {% if missing_checks %}
+      <ul>
+        {% for staff in missing_checks %}
+          <li>{{ staff.name }} (Driver ID: {{ staff.id }})</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>✅ All vehicle checks are done today.</p>
+    {% endif %}
+       
+    <!-- 🚨 Badge Renewals -->
+<div class="info-box">
+    <h2 class="text-xl font-semibold text-gray-700 mb-3">🚨 Upcoming Driver Badge Renewals (Next 8 Weeks)</h2>
+    {% if upcoming_badge_renewals %}
+        <ul class="list-disc list-inside text-gray-700">
+            {% for driver in upcoming_badge_renewals %}
+                <li><strong>{{ driver.name }}</strong> — due on {{ driver.badge_renewal_date.strftime('%Y-%m-%d') }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-gray-600">No upcoming badge renewals in the next 8 weeks.</p>
+    {% endif %}
+</div>
+
+</div>
+{% endblock %}

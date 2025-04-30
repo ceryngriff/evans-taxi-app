@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Vehicle</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <a href="{{ url_for('manager_dashboard') }}" class="back-link">← Return to Dashboard</a>
+</head>
+<body>
+    <div class="container">
+        <h1>Add Vehicle</h1>
+        <form method="POST">
+            <label>Registration:</label>
+            <input type="text" name="registration" required><br><br>
+
+            <label>Make and Model:</label>
+            <input type="text" name="make_model" required><br><br>
+
+            <label>Plate Number:</label>
+            <input type="text" name="plate_number" required><br><br>
+
+            <label>MOT Renewal Date:</label>
+            <input type="date" name="mot_renewal_date" required><br><br>
+
+            <label>MOT 6-Monthly Date:</label>
+            <input type="date" name="mot_6_monthly_date"><br><br>
+
+            <label>Plate Expiry Date:</label>
+            <input type="date" name="plate_expiry_date" required><br><br>
+
+            <label>Tax Expiry Date:</label>
+            <input type="date" name="tax_expiry_date" required><br><br>
+
+            <label>
+                <input type="checkbox" name="insured">
+                Insured
+            </label><br><br>
+
+            <label for="vehicle_size">Vehicle Size:</label>
+<select name="vehicle_size" required>
+    <option value="">-- Select Size --</option>
+    <option value="5-seater">5-seater</option>
+    <option value="7-seater">7-seater</option>
+    <option value="8-seater">8-seater</option>
+    <option value="16-seater">16-seater</option>
+    <option value="24-seater">24-seater</option>
+    <option value="28-seater">28-seater</option>
+</select>
+<br><br>
+
+
+            <button type="submit">Add Vehicle</button>
+        </form>
+    </div>
+</body>
+</html>

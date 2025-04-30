@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Driver Allocation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #fdfaf5;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #f57c00;
+            margin-bottom: 30px;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 20px;
+        }
+        select, input[type="text"], button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .checkbox-group label {
+            margin-right: 15px;
+            padding: 8px 12px;
+            background: #f7f7f7;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 6px;
+        }
+        button, .cancel-btn {
+            background-color: #f57c00;
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 30px;
+            text-decoration: none;
+            display: inline-block;
+            padding: 12px 20px;
+            border-radius: 8px;
+        }
+        button:hover, .cancel-btn:hover {
+            background-color: #e65100;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Edit Driver Allocation</h1>
+
+    <form method="POST">
+        <label for="contract_id">Select Contract:</label>
+        <select name="contract_id" id="contract_id" required>
+            {% for contract in contracts %}
+                <option value="{{ contract.id }}" {% if contract.id == allocation.contract_id %}selected{% endif %}>
+                    {{ contract.contract_number }} - {{ contract.school_name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label for="driver_id">Driver:</label>
+        <select name="driver_id" id="driver_id" required>
+            {% for driver in drivers %}
+                <option value="{{ driver.id }}" {% if driver.id == allocation.driver_id %}selected{% endif %}>
+                    {{ driver.name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label for="escort_id">Escort (optional):</label>
+        <select name="escort_id" id="escort_id">
+            <option value="">-- None --</option>
+            {% for escort in escorts %}
+                <option value="{{ escort.id }}" {% if allocation.escort and escort.id == allocation.escort_id %}selected{% endif %}>
+                    {{ escort.name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label for="driver_shift">Driver Shift:</label>
+        <select name="driver_shift" id="driver_shift" required>
+            <option value="AM" {% if allocation.driver_shift == 'AM' %}selected{% endif %}>AM</option>
+            <option value="PM" {% if allocation.driver_shift == 'PM' %}selected{% endif %}>PM</option>
+        </select>
+
+        <label for="escort_shift">Escort Shift (optional):</label>
+        <select name="escort_shift" id="escort_shift">
+            <option value="">-- None --</option>
+            <option value="AM" {% if allocation.escort_shift == 'AM' %}selected{% endif %}>AM</option>
+            <option value="PM" {% if allocation.escort_shift == 'PM' %}selected{% endif %}>PM</option>
+        </select>
+
+        <label>Days of the Week:</label>
+        <div class="checkbox-group">
+            {% set days = allocation.contract_days.split(',') if allocation.contract_days else [] %}
+            {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] %}
+                <label>
+                    <input type="checkbox" name="contract_days" value="{{ day }}" {% if day in days %}checked{% endif %}>
+                    {{ day }}
+                </label>
+            {% endfor %}
+        </div>
+
+        <label>
+            <input type="checkbox" name="repeat_all_week" value="1" {% if allocation.repeat_all_week %}checked{% endif %}>
+            Repeat Weekly (until leave is taken)
+        </label>
+
+        <button type="submit">Update Allocation</button>
+        <a href="{{ url_for('driverallocation') }}" class="cancel-btn">Cancel</a>
+    </form>
+</div>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Staff Leave Requests</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+</head>
+<body>
+    <a href="{{ url_for('manager_dashboard') }}" class="back-link">← Return to Dashboard</a>
+    <div class="container">
+        <h1>Manage Staff Leave Requests</h1>
+
+        <!-- Pending -->
+        <h2>Pending Requests</h2>
+        {% if pending %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Staff Type</th>
+                        <th>Staff ID</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Reason</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for leave in pending %}
+                    <tr>
+                        <td>{{ leave.person_type.title() }}</td>
+                        <td>{{ leave.person_id }}</td>
+                        <td>{{ leave.start_date }}</td>
+                        <td>{{ leave.end_date }}</td>
+                        <td>{{ leave.reason or "—" }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('admin_leave_action', leave_id=leave.id, action='approve') }}" style="display:inline;">
+                                <button type="submit">✅ Approve</button>
+                            </form>
+                            <form method="POST" action="{{ url_for('admin_leave_action', leave_id=leave.id, action='decline') }}" style="display:inline;">
+                                <button type="submit">❌ Decline</button>
+                            </form>
+                            <form method="POST" action="{{ url_for('delete_leave', leave_id=leave.id) }}" style="display:inline;">
+                                <button type="submit">🗑️ Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No pending requests.</p>
+        {% endif %}
+
+        <!-- Approved -->
+        <h2>Approved Requests</h2>
+        {% if approved %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Staff Type</th>
+                        <th>Staff ID</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Reason</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for leave in approved %}
+                    <tr>
+                        <td>{{ leave.person_type.title() }}</td>
+                        <td>{{ leave.person_id }}</td>
+                        <td>{{ leave.start_date }}</td>
+                        <td>{{ leave.end_date }}</td>
+                        <td>{{ leave.reason or "—" }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('delete_leave', leave_id=leave.id) }}">
+                                <button type="submit">🗑️ Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No approved requests.</p>
+        {% endif %}
+
+        <!-- Declined -->
+        <h2>Declined Requests</h2>
+        {% if declined %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Staff Type</th>
+                        <th>Staff ID</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Reason</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for leave in declined %}
+                    <tr>
+                        <td>{{ leave.person_type.title() }}</td>
+                        <td>{{ leave.person_id }}</td>
+                        <td>{{ leave.start_date }}</td>
+                        <td>{{ leave.end_date }}</td>
+                        <td>{{ leave.reason or "—" }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('delete_leave', leave_id=leave.id) }}">
+                                <button type="submit">🗑️ Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No declined requests.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

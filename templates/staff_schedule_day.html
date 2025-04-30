@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Schedule for {{ date_str }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Your Schedule for {{ date_str }}</h1>
+
+        {% if allocations %}
+            {% for alloc in allocations %}
+                <div class="shift-card {{ alloc.driver_shift|lower }}">
+                    <h3>{{ alloc.contract.contract_number }} – {{ 
+alloc.contract.school_name }}</h3>
+
+                    {% for child in alloc.contract.children %}
+                        <p><strong>Child:</strong> {{ child.name }}</p>
+                        {% if alloc.driver_shift == 'AM' %}
+                            <p>🏠 Pickup Address: {{ child.address }}</p>
+                            <p>⏰ School Start Time: {{ 
+alloc.contract.school_start_time.strftime('%H:%M') }}</p>
+                        {% elif alloc.driver_shift == 'PM' %}
+                            <p>⏰ School Finish Time: {{ 
+alloc.contract.school_finish_time.strftime('%H:%M') }}</p>
+                            <p>🚗 Drop-off Address: {{ child.address }}</p>
+                        {% endif %}
+                        <hr>
+                    {% endfor %}
+
+                    {% if alloc.escort and alloc.escort.address %}
+                        <p><strong>Escort Address:</strong> {{ 
+alloc.escort.address }}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No allocations for this day.</p>
+        {% endif %}
+
+        <br>
+        <a href="{{ url_for('staff_calendar') }}">← Back to Calendar</a>
+    </div>
+</body>
+</html>

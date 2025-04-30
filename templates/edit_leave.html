@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Leave</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Edit Leave</h1>
+
+        <form method="POST">
+            <label for="person_type">Type:</label>
+            <select name="person_type" required>
+                <option value="driver" {% if leave.person_type == 'driver' %}selected{% endif %}>Driver</option>
+                <option value="escort" {% if leave.person_type == 'escort' %}selected{% endif %}>Escort</option>
+            </select><br><br>
+
+            <label for="person_id">Name:</label>
+            <select name="person_id" required>
+                <optgroup label="Drivers">
+                    {% for driver in drivers %}
+                        <option value="{{ driver.id }}" {% if leave.person_type == 'driver' and leave.person_id == driver.id %}selected{% endif %}>
+                            {{ driver.name }}
+                        </option>
+                    {% endfor %}
+                </optgroup>
+                <optgroup label="Escorts">
+                    {% for escort in escorts %}
+                        <option value="{{ escort.id }}" {% if leave.person_type == 'escort' and leave.person_id == escort.id %}selected{% endif %}>
+                            {{ escort.name }}
+                        </option>
+                    {% endfor %}
+                </optgroup>
+            </select><br><br>
+
+            <label for="start_date">Start Date:</label>
+            <input type="date" name="start_date" value="{{ leave.start_date }}" required><br><br>
+
+            <label for="end_date">End Date:</label>
+            <input type="date" name="end_date" value="{{ leave.end_date }}" required><br><br>
+
+            <label for="reason">Reason:</label>
+            <input type="text" name="reason" value="{{ leave.reason }}"><br><br>
+
+            <button type="submit">Update Leave</button>
+        </form>
+
+        <br><a href="{{ url_for('manage_leave') }}">Back to Leave Management</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Inset Days</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <a href="{{ url_for('manager_dashboard') }}" class="back-link">← Return to Dashboard</a>
+</head>
+<body>
+    <div class="container">
+        <h2>Inset Days for {{ school_name }}</h2>
+
+        {% if inset_days %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inset in inset_days %}
+                        <tr>
+                            <td>{{ inset.date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ inset.reason if inset.reason else 'No reason provided' }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No inset days found for {{ school_name }}.</p>
+        {% endif %}
+
+        <br>
+        <a href="{{ url_for('manager.manage_school_calendar') }}">Back to School Calendar</a>
+    </div>
+</body>
+</html>

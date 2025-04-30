@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Missed Clock-In Requests</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Missed Clock-In Requests</h1>
+
+        {% if requests %}
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th>Staff</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Comment</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in requests %}
+                <tr>
+                    <td>{{ req.staff_name }}</td>
+                    <td>{{ req.staff_type|capitalize }}</td>
+                    <td>{{ req.requested_date }}</td>
+                    <td>{{ req.requested_time.strftime('%H:%M') if req.requested_time else 'N/A' }}</td>
+                    <td>{{ req.comment or '—' }}</td>
+                    <td>{{ req.status|capitalize }}</td>
+                    <td>
+                        {% if req.status == 'pending' %}
+                        <form method="POST" action="{{ url_for('approve_missed_clockin', request_id=req.id) }}" style="display:inline;">
+                            <button type="submit">Approve</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('decline_missed_clockin', request_id=req.id) }}" style="display:inline;">
+                            <button type="submit" class="delete-btn">Decline</button>
+                        </form>
+                        {% else %}
+                            <em>{{ req.status|capitalize }}</em>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p>No missed clock-in requests submitted yet.</p>
+        {% endif %}
+
+        <a href="{{ url_for('manager_dashboard') }}" class="btn">Back to Dashboard</a>
+    </div>
+</body>
+</html>

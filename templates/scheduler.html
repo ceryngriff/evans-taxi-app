@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contract Scheduler</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&display=swap" rel="stylesheet">
+  <a href="{{ url_for('manager_dashboard') }}" class="back-link">← Return to Dashboard</a>
+  <style>
+    :root {
+      --bg-color: #0f2027;
+      --panel-color: #1c2b36;
+      --text-color: #ffffff;
+      --highlight: #00ffff;
+      --soft-highlight: rgba(0, 255, 255, 0.15);
+      --font-main: 'Orbitron', sans-serif;
+      --border-radius: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-main);
+      background: var(--bg-color);
+      color: var(--text-color);
+      height: 100%;
+    }
+
+    .topbar {
+      background-color: #111;
+      padding: 1rem;
+      color: var(--highlight);
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 600;
+      box-shadow: 0 2px 10px rgba(0, 255, 255, 0.2);
+    }
+
+    .controls {
+      padding: 1rem;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      background: var(--panel-color);
+    }
+
+    .controls input, .controls select, .controls button {
+      padding: 10px;
+      border-radius: var(--border-radius);
+      border: none;
+      font-family: var(--font-main);
+    }
+
+    .controls button {
+      background-color: var(--highlight);
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 2rem;
+      gap: 20px;
+    }
+
+    .column {
+      flex: 1;
+      min-width: 280px;
+      background-color: var(--panel-color);
+      padding: 1rem;
+      border-radius: var(--border-radius);
+      box-shadow: 0 0 15px rgba(0,255,255,0.1);
+    }
+
+    .column h2 {
+      color: var(--highlight);
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .item {
+      background-color: rgba(255, 255, 255, 0.05);
+      margin-bottom: 10px;
+      color: #000;
+      padding: 0.5rem;
+      border-radius: var(--border-radius);
+      cursor: grab;
+      font-size: 0.9rem;
+      border-left: 5px solid transparent;
+    }
+
+    .contract[data-size="5-seater"], .vehicle[data-size="5-seater"] { background-color: #b2ebf2; }
+    .contract[data-size="7-seater"], .vehicle[data-size="7-seater"] { background-color: #a5d6a7; }
+    .contract[data-size="8-seater"], .vehicle[data-size="8-seater"] { background-color: #fff59d; }
+    .contract[data-size="16-seater"], .vehicle[data-size="16-seater"] { background-color: #f48fb1; }
+    .contract[data-size="24-seater"], .vehicle[data-size="24-seater"] { background-color: #ffcc80; }
+    .contract[data-size="28-seater"], .vehicle[data-size="28-seater"] { background-color: #ffab91; }
+
+    .driver-slot {
+      border: 2px dashed var(--highlight);
+      padding: 1rem;
+      min-height: 120px;
+      border-radius: var(--border-radius);
+      margin-bottom: 1rem;
+    }
+
+    .driver-slot.over {
+      background-color: var(--soft-highlight);
+    }
+
+    .suggestions {
+      margin-top: 5px;
+      font-size: 0.8rem;
+    }
+
+    @media (max-width: 768px) {
+      .container { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">🧠 Evans Taxis Scheduler</div>
+
+  <div class="controls">
+    <label>Date: <input type="date" id="allocation-date"></label>
+    <label>Shift: 
+      <select id="allocation-shift">
+        <option value="AM">AM</option>
+        <option value="PM">PM</option>
+      </select>
+    </label>
+    <button onclick="saveAllocations()">💾 Save</button>
+  </div>
+
+  <div class="container">
+    <div class="column">
+      <h2>Contracts</h2>
+      <div id="contract-list"></div>
+    </div>
+
+    <div class="column">
+      <h2>Vehicles</h2>
+      <div id="vehicle-list"></div>
+    </div>
+
+    <div class="column">
+      <h2>Drivers</h2>
+      <div id="driver-list"></div>
+    </div>
+
+    <div class="column">
+      <h2>Escorts</h2>
+      <div id="escort-list"></div>
+    </div>
+  </div>
+
+  <script>
+    let contracts = [], drivers = [], escorts = [], vehicles = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadAllData();
+      renderScheduler();
+    });
+
+    async function loadAllData() {
+      const [cRes, dRes, vRes, eRes] = await Promise.all([
+        fetch('/api/contracts'),
+        fetch('/api/drivers'),
+        fetch('/api/vehicles'),
+        fetch('/api/escorts')
+      ]);
+      contracts = await cRes.json();
+      drivers = await dRes.json();
+      vehicles = await vRes.json();
+      escorts = await eRes.json();
+    }
+
+    function renderScheduler() {
+      const contractList = document.getElementById('contract-list');
+      const vehicleList = document.getElementById('vehicle-list');
+      const driverList = document.getElementById('driver-list');
+      const escortList = document.getElementById('escort-list');
+
+      contractList.innerHTML = contracts.map(c => 
+        `<div class="item contract" draggable="true" data-id="${c.id}" data-size="${c.required_vehicle_size}">
+          <strong>${c.contract_number}</strong><br>
+          ${c.school_name} at ${c.pickup_time}<br>
+          <small>${c.required_vehicle_size}</small><br>
+          <button onclick="suggestDriver(${c.id}, this)">💡 Suggest Driver</button>
+          <div class="suggestions" id="suggestions-${c.id}"></div>
+        </div>`
+      ).join('');
+
+      vehicleList.innerHTML = vehicles.map(v => 
+        `<div class="item vehicle" draggable="true" data-id="${v.id}" data-size="${v.vehicle_size}">
+          <strong>${v.make_model}</strong><br>
+          <small>${v.vehicle_size}</small>
+        </div>`
+      ).join('');
+
+      driverList.innerHTML = drivers.map(d => 
+        `<div class="driver-slot" draggable="true" data-id="${d.id}">
+          <strong>${d.name}</strong> <small>(${d.shift_start} - ${d.shift_end})</small>
+        </div>`
+      ).join('');
+
+      escortList.innerHTML = escorts.map(e => 
+        `<div class="item escort" draggable="true" data-id="${e.id}">
+          <strong>${e.name}</strong><br>
+          <small>${e.phone}</small>
+        </div>`
+      ).join('');
+
+      setupDragDrop();
+    }
+
+    function setupDragDrop() {
+      let draggedItem = null;
+
+      document.querySelectorAll('[draggable=true]').forEach(el => {
+        el.addEventListener('dragstart', e => {
+          draggedItem = el;
+          setTimeout(() => { el.style.display = 'none'; }, 0);
+        });
+
+        el.addEventListener('dragend', () => {
+          setTimeout(() => {
+            if (draggedItem) draggedItem.style.display = 'block';
+            draggedItem = null;
+          }, 0);
+        });
+      });
+
+      document.querySelectorAll('.driver-slot').forEach(slot => {
+        slot.addEventListener('dragover', e => {
+          e.preventDefault();
+          slot.classList.add('over');
+        });
+
+        slot.addEventListener('dragleave', () => {
+          slot.classList.remove('over');
+        });
+
+        slot.addEventListener('drop', () => {
+          if (draggedItem) {
+            slot.appendChild(draggedItem);
+            slot.classList.remove('over');
+          }
+        });
+      });
+    }
+
+    function suggestDriver(contractId, btn) {
+      const shift = document.getElementById('allocation-shift').value;
+      const date = document.getElementById('allocation-date').value;
+      const container = document.getElementById(`suggestions-${contractId}`);
+      container.innerHTML = '🔄 Fetching...';
+
+      fetch(`/api/suggestions?contract_id=${contractId}&shift=${shift}&date=${date}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.length === 0) {
+            container.innerHTML = '<em>No suitable drivers found</em>';
+            return;
+          }
+          const list = '<ul>' + data.map(d => `<li>${d.name} - ${d.distance_km} km, ${d.est_time_minutes} mins, £${d.fuel_cost}</li>`).join('') + '</ul>';
+          container.innerHTML = list;
+        });
+    }
+
+    function saveAllocations() {
+  const shift = document.getElementById('allocation-shift').value;
+  const date = document.getElementById('allocation-date').value;
+  const payload = [];
+
+  document.querySelectorAll('.driver-slot').forEach(slot => {
+    const driverId = slot.dataset.id;
+    const contracts = slot.querySelectorAll('.contract');
+    const escorts = slot.querySelectorAll('.escort');
+
+    contracts.forEach(c => {
+      // Get the escort ID, if any
+      const escortId = escorts.length > 0 ? escorts[0].dataset.id : null;
+
+      // Log the individual contract data
+      console.log(`Driver ID: ${driverId}, Contract ID: ${c.dataset.id}, Escort ID: ${escortId}`);
+
+      payload.push({
+  driver_id: driverId,
+  contract_id: c.dataset.id,
+  driver_shift: shift,
+  escort_shift: shift,
+  date: date,
+  escort_id: escortId 
+});
+
+    });
+  });
+
+  // Log the final payload before sending
+  console.log("Payload being sent:", payload);
+
+  fetch('/api/save_allocations', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+  allocations: payload,
+  allocation_date: date
+})
+  }).then(res => {
+    if (res.ok) alert('Allocations saved ✅');
+    else alert('Error saving allocations');
+  });
+}
+
+  </script>
+</body>
+</html>
+
+

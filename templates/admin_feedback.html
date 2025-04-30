@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Staff Feedback</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <a href="{{ url_for('manager_dashboard') }}" class="back-link">← Return to Dashboard</a>
+</head>
+<body>
+    <div class="feedback-container">
+        <h1>Staff Feedback</h1>
+
+        {% if feedbacks %}
+        <table class="feedback-table">
+            <thead>
+                <tr>
+                    <th>Submitted By</th>
+                    <th>Message</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fb in feedbacks %}
+                <tr>
+                    <td>{{ fb.staff_name }}</td>
+                    <td>{{ fb.message }}</td>
+                    <td>{{ fb.submitted_at }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('delete_feedback', feedback_id=fb.id) }}">
+                            <button type="submit" class="delete-btn" onclick="return confirm('Delete this feedback?');">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p class="no-feedback">No feedback has been submitted yet.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Generate Quote</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <h2>Generate a Quote</h2>
+
+    <form method="POST" action="">
+        <label for="vehicle_type">Vehicle Type:</label>
+        <select name="vehicle_type" required>
+            <option>Saloon</option>
+            <option>People Carrier</option>
+            <option>Minibus</option>
+            <option>Mini Coach</option>
+            <option>Midi Coach</option>
+            <option>Full Coach</option>
+        </select><br><br>
+
+        <label for="tariff">Tariff Type:</label>
+        <select name="tariff" required>
+            <option value="low">Low-End</option>
+            <option value="mid">Mid-Range</option>
+            <option value="premium">Premium</option>
+        </select><br><br>
+
+        <label for="mileage">Mileage:</label>
+        <input type="number" name="mileage" step="0.1" required><br><br>
+
+        <button type="submit">Generate Quote</button>
+    </form>
+
+    {% if quote is not none %}
+        <hr>
+        <div id="quote-result">
+            <h3>Quote Result</h3>
+            <p><strong>Vehicle:</strong> {{ quote.vehicle_type }}</p>
+            <p><strong>Tariff:</strong> {{ quote.tariff }}</p>
+            <p><strong>Mileage:</strong> {{ quote.mileage }} miles</p>
+            <p><strong>Total Price:</strong> £{{ quote.total_price }}</p>
+        </div>
+
+        <br>
+        <button onclick="printQuote()">🖨️ Print Quote</button>
+
+        <!-- PDF Download Link -->
+        <br><br>
+       
+        </a>
+    {% endif %}
+
+    <script>
+        function printQuote() {
+            const originalContents = document.body.innerHTML;
+            const quoteContents = document.getElementById('quote-result').innerHTML;
+
+            document.body.innerHTML = "<h2>Quote</h2>" + quoteContents;
+            window.print();
+            document.body.innerHTML = originalContents;
+        }
+    </script>
+
+</body>
+</html>

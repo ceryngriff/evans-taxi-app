@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Vehicle Check Submissions</h2>
+
+  {% if checks %}
+    <table class="table table-bordered mt-3">
+      <thead class="thead-dark">
+        <tr>
+          <th>Date</th>
+          <th>Vehicle</th>
+          <th>Staff</th>
+          <th>Mileage</th>
+          <th>Lights</th>
+          <th>Tires</th>
+          <th>Oil Level</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in checks %}
+        <tr>
+          <td>{{ c.date }}</td>
+          <td>{{ c.vehicle }}</td>
+          <td>{{ c.staff_name }}</td>
+          <td>{{ c.mileage }}</td>
+          <td>{{ '✅' if c.lights_ok else '❌' }}</td>
+          <td>{{ '✅' if c.tires_ok else '❌' }}</td>
+          <td>{{ '✅' if c.oil_level_ok else '❌' }}</td>
+          <td>{{ c.notes }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No vehicle checks submitted yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

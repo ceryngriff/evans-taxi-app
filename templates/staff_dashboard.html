@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Staff Dashboard{% endblock %}
+{% block content %}
+
+<h1>Welcome, {{ user.name }}!</h1>
+
+<!-- Clock In / Out Buttons -->
+<div style="margin-bottom: 20px;">
+    <form action="{{ url_for('clock_in') }}" method="POST" style="display:inline;">
+        <button type="submit">⏱️ Clock In</button>
+    </form>
+
+    <form action="{{ url_for('clock_out') }}" method="POST" style="display:inline; margin-left: 10px;">
+        <button type="submit">✅ Clock Out</button>
+    </form>
+</div>
+
+<!-- Calendar Access -->
+<p>
+    📅 <a href="{{ url_for('staff_calendar') }}">View Monthly Schedule</a>
+</p>
+
+<!-- Today's Allocations with Shift-Aware Info -->
+<h2>Your Allocations for Today:</h2>
+<div class="card-grid">
+{% for alloc in allocations %}
+    <div class="shift-card {{ alloc.driver_shift|lower }}">
+        <h3>{{ alloc.contract.contract_number }} – {{ alloc.contract.school_name }}</h3>
+
+        {% for child in alloc.contract.children %}
+            <p><strong>Child:</strong> {{ child.name }}</p>
+
+            {% if alloc.driver_shift == 'AM' %}
+                <p>🏠 <strong>Pickup Address:</strong> {{ child.address }}</p>
+                <p>⏰ <strong>School Start Time:</strong> {{ alloc.contract.school_start_time.strftime('%H:%M') }}</p>
+            {% elif alloc.driver_shift == 'PM' %}
+                <p>⏰ <strong>School Finish Time:</strong> {{ alloc.contract.school_finish_time.strftime('%H:%M') }}</p>
+                <p>🚗 <strong>Drop-off Address:</strong> {{ child.address }}</p>
+            {% endif %}
+            <hr>
+        {% endfor %}
+        <form method="POST" action="{{ url_for('submit_run_status') }}">
+            <input type="hidden" name="allocation_id" value="{{ alloc.id }}">
+            <input type="hidden" name="shift" value="{{ alloc.driver_shift }}">
+            
+            <label>
+                <input type="checkbox" name="completed" onchange="this.form.submit()"> Run Completed
+            </label>
+        
+            <select name="reason" onchange="this.form.submit()">
+                <option value="">-- Optional Reason --</option>
+                <option value="child not in">Child Not In</option>
+                <option value="vehicle issue">Vehicle Issue</option>
+            </select>
+        </form>
+    </div>
+{% else %}
+    <p>No allocations found for today.</p>
+{% endfor %}
+</div>
+
+<hr>
+
+<!-- Leave Request Form -->
+<h2>Request Annual Leave:</h2>
+<form action="{{ url_for('submit_leave_request') }}" method="POST">
+    <label for="start_date">Start Date:</label>
+    <input type="date" name="start_date" required>
+
+    <label for="end_date">End Date:</label>
+    <input type="date" name="end_date" required>
+
+    <label for="reason">Reason:</label>
+    <input type="text" name="reason" placeholder="e.g. holiday, personal, sick">
+
+    <button type="submit">📩 Submit Leave Request</button>
+</form>
+
+<hr>
+
+<!-- Missed Clock-In Form -->
+<h2>Forgot to Clock In?</h2>
+<form action="{{ url_for('submit_missed_clockin') }}" method="POST">
+    <label for="requested_date">Date:</label>
+    <input type="date" name="requested_date" required>
+
+    <label for="requested_time">Time:</label>
+    <input type="time" name="requested_time" required>
+
+    <label for="comment">Comment (optional):</label>
+    <input type="text" name="comment" placeholder="e.g. I forgot when rushing to school">
+
+    <button type="submit">Submit Missed Clock-In</button>
+</form>
+
+<hr>
+
+<!-- Missed Clock-Out Form -->
+<h2>Forgot to Clock Out?</h2>
+<form action="{{ url_for('submit_missed_clockout_request') }}" method="POST">
+    <label for="requested_date">Date:</label>
+    <input type="date" name="requested_date" required>
+
+    <label for="requested_time">Time:</label>
+    <input type="time" name="requested_time" required>
+
+    <label for="comment">Comment (optional):</label>
+    <input type="text" name="comment" placeholder="e.g. Forgot to clock out after drop-off">
+
+    <button type="submit">Submit Missed Clock-Out</button>
+</form>
+
+<hr>
+
+<!-- Feedback Form -->
+<h2>Feedback:</h2>
+<form action="{{ url_for('submit_feedback') }}" method="POST">
+    <label for="message">Leave feedback or suggestions:</label>
+    <input type="text" name="message" placeholder="What would you like us to know?" required>
+    <button type="submit">📨 Submit Feedback</button>
+</form>
+
+<hr>
+
+<!-- Approved Leave Display -->
+<h2>Your Approved Leave:</h2>
+<ul>
+{% for leave in approved_leaves %}
+    <li>
+        📅 <strong>{{ leave.start_date }}</strong> to <strong>{{ leave.end_date }}</strong><br>
+        <em>{{ leave.reason or "No reason given" }}</em>
+    </li>
+{% else %}
+    <li>No approved leave.</li>
+{% endfor %}
+</ul>
+
+<!-- 📍 Location Tracking Script -->
+<script>
+    const driverId = {{ current_user.id | default(0) | tojson }};
+
+    navigator.geolocation.watchPosition(
+        position => {
+            const { latitude, longitude } = position.coords;
+
+            fetch('/update-location', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ driver_id: driverId, latitude, longitude })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Location sent successfully:", data);
+            })
+            .catch(error => {
+                console.error("Error sending location:", error);
+            });
+        },
+        error => {
+            console.error("Location error:", error);
+        },
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+    );
+</script>
+
+{% endblock %}

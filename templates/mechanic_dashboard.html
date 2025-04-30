@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<div class="container mt-4">
+
+  <!-- 🧰 Your Job Summary -->
+  {% if job_count %}
+    <div class="info-box mb-4">
+      <h3 class="text-xl font-semibold text-gray-700 mb-2">
+        🧰 You have {{ job_count }} job{{ 's' if job_count != 1 else '' }} assigned
+      </h3>
+    </div>
+  {% else %}
+    <div class="info-box mb-4">
+      <h3 class="text-xl font-semibold text-gray-500 mb-2">
+        🧰 No jobs assigned right now
+      </h3>
+    </div>
+  {% endif %}
+
+  <!-- 🔧 Assigned Mechanic Jobs -->
+  {% if mechanic_jobs %}
+    <div class="info-box mb-4">
+      <h3 class="text-xl font-semibold text-gray-700 mb-2">🔧 Assigned Mechanic Jobs</h3>
+      <ul class="list-disc list-inside text-gray-700">
+        {% for job in mechanic_jobs %}
+          <li class="mb-2">
+            <strong>{{ job.job_description }}</strong><br>
+            Vehicle: {{ job.vehicle.registration }} - {{ job.vehicle.make_model }}<br>
+            Due: {{ job.job_date.strftime('%d %B %Y') }}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <!-- 🚌 Upcoming Vehicle Maintenance -->
+  <div class="info-box mb-4">
+    <h3 class="text-xl font-semibold text-gray-700 mb-2">🚌 Upcoming Vehicle Maintenance</h3>
+    {% if upcoming_vehicle_checks %}
+      <ul class="list-disc list-inside text-gray-700">
+        {% for vehicle in upcoming_vehicle_checks %}
+          <li>
+            {{ vehicle.registration }} —
+            MOT: {{ vehicle.mot_renewal_date or 'N/A' }} |
+            Plate: {{ vehicle.plate_expiry_date or 'N/A' }} |
+            Tax: {{ vehicle.tax_expiry_date or 'N/A' }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-gray-600">No upcoming vehicle checks.</p>
+    {% endif %}
+  </div>
+
+  <!-- 🚨 Vehicle Checks Not Completed Today -->
+  <div class="info-box">
+    <h3 class="text-xl font-semibold text-red-600 mb-2">🚨 Vehicle Checks Not Completed Today</h3>
+    {% if missing_checks %}
+      <ul class="list-disc list-inside text-gray-700">
+        {% for staff in missing_checks %}
+          <li>{{ staff.name }} (Driver ID: {{ staff.id }})</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-green-700">✅ All vehicle checks are done today.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

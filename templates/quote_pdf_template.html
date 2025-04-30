@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Quote PDF</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        h2 { margin-bottom: 10px; }
+        p { margin: 5px 0; }
+    </style>
+</head>
+<body>
+
+    <h2>Quote</h2>
+    <p><strong>Date:</strong> {{ quote.created_at.strftime('%Y-%m-%d') }}</p>
+    <p><strong>Vehicle Type:</strong> {{ quote.vehicle_type }}</p>
+    <p><strong>Tariff:</strong> {{ quote.tariff }}</p>
+    <p><strong>Mileage:</strong> {{ quote.mileage }} miles</p>
+    <p><strong>Total:</strong> £{{ quote.total_price }}</p>
+
+</body>
+</html>

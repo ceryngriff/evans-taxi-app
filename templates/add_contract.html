@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Contract</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        h1, h2, h3 {
+            color: #00ffff;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+        .child-group {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <a href="{{ url_for('manager_dashboard') }}" class="back-link">← Return to Dashboard</a>
+
+    <h1>Add New Contract</h1>
+
+    <form method="POST">
+        <!-- Contract Info -->
+        <div>
+            <label>Contract Number:</label>
+            <input type="text" name="contract_number" required>
+        </div>
+
+        <div>
+            <label>School Name:</label>
+            <input type="text" name="school_name" required>
+        </div>
+
+        <div>
+            <label>School Postcode:</label>
+            <input type="text" name="school_postcode" required>
+        </div>
+
+        <div>
+            <label>School Start Time:</label>
+            <input type="time" name="school_start_time" required>
+        </div>
+
+        <div>
+            <label>School Finish Time:</label>
+            <input type="time" name="school_finish_time" required>
+        </div>
+
+        <div>
+            <label>Route Start Time:</label>
+            <input type="time" name="route_start_time" required>
+        </div>
+
+        <div>
+            <label>Route Finish Time:</label>
+            <input type="time" name="route_finish_time" required>
+        </div>
+
+        <div>
+            <label>Required Vehicle Size:</label>
+            <select name="required_vehicle_size" required>
+                <option value="">-- Select Size --</option>
+                <option value="5-seater">5-seater</option>
+                <option value="7-seater">7-seater</option>
+                <option value="8-seater">8-seater</option>
+                <option value="16-seater">16-seater</option>
+                <option value="24-seater">24-seater</option>
+                <option value="28-seater">28-seater</option>
+            </select>
+        </div>
+
+        <div>
+            <label>Commute Time (in minutes):</label>
+            <input type="number" name="commute_time" min="0" required>
+        </div>
+
+        <div>
+            <label><input type="checkbox" name="escort_required"> Escort Required</label>
+        </div>
+
+        <hr>
+
+        <!-- Children -->
+        <h3>Children</h3>
+        <div id="children-section">
+            <div class="child-group">
+                <label>Child Name:</label>
+                <input type="text" name="child_name[]" required>
+                <label>Child Address:</label>
+                <input type="text" name="child_address[]" required>
+                <label>Child Postcode:</label>
+                <input type="text" name="child_postcode[]" required>
+            </div>
+        </div>
+
+        <button type="button" onclick="addChild()">+ Add Another Child</button>
+        <br><br>
+
+        <button type="submit">Save Contract</button>
+    </form>
+
+    <script>
+        function addChild() {
+            const container = document.getElementById("children-section");
+            const newChild = document.createElement("div");
+            newChild.classList.add("child-group");
+
+            newChild.innerHTML = `
+                <label>Child Name:</label>
+                <input type="text" name="child_name[]" required>
+                <label>Child Address:</label>
+                <input type="text" name="child_address[]" required>
+                <label>Child Postcode:</label>
+                <input type="text" name="child_postcode[]" required>
+                <hr>
+            `;
+            container.appendChild(newChild);
+        }
+    </script>
+
+</body>
+</html>

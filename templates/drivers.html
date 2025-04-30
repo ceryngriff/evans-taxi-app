@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>All Drivers</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>All Drivers</h1>
+        <a href="{{ url_for('add_driver') }}" class="btn">+ Add New Driver</a>
+
+        {% if drivers %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Badge Renewal Date</th>
+                        <th>Username</th>
+                        <th>Shift</th>
+                        <th>Postcode</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for driver in drivers %}
+                    <tr>
+                        <td>{{ driver.name }}</td>
+                        <td>{{ driver.phone }}</td>
+                        <td>{{ driver.badge_renewal_date }}</td>
+                        <td>{{ driver.username }}</td>
+                        <td>{{ driver.shift or 'N/A' }}</td>
+                        <td>{{ driver.base_postcode or 'N/A' }}</td>
+                        <td>
+                            <a href="{{ url_for('edit_driver', driver_id=driver.id) }}" class="btn">Edit</a>
+                            <form action="{{ url_for('delete_driver', driver_id=driver.id) }}" method="POST" style="display:inline;">
+                                <button type="submit" onclick="return confirm('Are you sure?')" class="btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No drivers found.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

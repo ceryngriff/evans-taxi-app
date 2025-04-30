@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Missed Clock-Out Requests</h2>
+
+  {% if requests %}
+    <table class="table table-bordered mt-3">
+      <thead class="thead-dark">
+        <tr>
+          <th>Staff</th>
+          <th>Role</th>
+          <th>Date</th>
+          <th>Requested Time</th>
+          <th>Comment</th>
+          <th>Submitted At</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in requests %}
+        <tr>
+          <td>
+            {% if req.staff_type == 'driver' %}
+              {{ Driver.query.get(req.staff_id).name }}
+            {% elif req.staff_type == 'escort' %}
+              {{ Escort.query.get(req.staff_id).name }}
+            {% else %}
+              Unknown
+            {% endif %}
+          </td>
+          <td>{{ req.staff_type.capitalize() }}</td>
+          <td>{{ req.requested_date.strftime('%Y-%m-%d') }}</td>
+          <td>{{ req.requested_time.strftime('%H:%M') }}</td>
+          <td>{{ req.comment or '—' }}</td>
+          <td>{{ req.submitted_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td>
+            {% if req.status == 'Pending' %}
+              <span class="badge bg-warning text-dark">Pending</span>
+            {% elif req.status == 'Approved' %}
+              <span class="badge bg-success">Approved</span>
+            {% elif req.status == 'Declined' %}
+              <span class="badge bg-danger">Declined</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if req.status == 'Pending' %}
+              <form action="{{ url_for('handle_missed_clockout', request_id=req.id, action='approve') }}" method="POST" style="display:inline;">
+                <button class="btn btn-sm btn-success" type="submit">Approve</button>
+              </form>
+              <form action="{{ url_for('handle_missed_clockout', request_id=req.id, action='decline') }}" method="POST" style="display:inline;">
+                <button class="btn btn-sm btn-danger" type="submit">Decline</button>
+              </form>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No missed clock-out requests at the moment.</p>
+  {% endif %}
+</div>
+{% endblock %}

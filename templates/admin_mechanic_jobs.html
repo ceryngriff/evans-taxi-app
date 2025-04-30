@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>🛠 Review Mechanic Jobs</h2>
+
+{% if jobs %}
+<table class="table">
+    <thead>
+        <tr>
+            <th>Vehicle</th>
+            <th>Description</th>
+            <th>Date</th>
+            <th>Completed At</th>
+            <th>Mechanic</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for job in jobs %}
+        <tr>
+            <td>{{ job.vehicle.registration }}</td>
+            <td>{{ job.job_description }}</td>
+            <td>{{ job.job_date.strftime('%Y-%m-%d') }}</td>
+            <td>{{ job.completed_at.strftime('%Y-%m-%d %H:%M') if job.completed_at else 'N/A' }}</td>
+            <td>{{ job.mechanic.name }}</td>
+            <td>
+                <form method="POST" action="{{ url_for('manager.confirm_mechanic_job', job_id=job.id) }}">
+                    <button type="submit" class="btn btn-success btn-sm">Confirm</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No mechanic jobs to review right now.</p>
+{% endif %}
+
+{% endblock %}

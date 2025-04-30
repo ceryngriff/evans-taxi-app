@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Vehicle</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="container">
+    <h1>Edit Vehicle</h1>
+    <form method="POST">
+        Registration: <input type="text" name="registration" value="{{ vehicle.registration }}" required><br><br>
+        Make & Model: <input type="text" name="make_model" value="{{ vehicle.make_model }}" required><br><br>
+        Plate Number: <input type="text" name="plate_number" value="{{ vehicle.plate_number }}" required><br><br>
+        MOT Renewal Date: <input type="date" name="mot_renewal_date" value="{{ vehicle.mot_renewal_date }}"><br><br>
+        MOT 6-Monthly Date: <input type="date" name="mot_6_monthly_date" value="{{ vehicle.mot_6_monthly_date }}"><br><br>
+        Plate Expiry Date: <input type="date" name="plate_expiry_date" value="{{ vehicle.plate_expiry_date }}"><br><br>
+        Tax Expiry Date: <input type="date" name="tax_expiry_date" value="{{ vehicle.tax_expiry_date }}"><br><br>
+        Insured: <input type="checkbox" name="insured" {% if vehicle.insured %}checked{% endif %}><br><br>
+
+        <label for="vehicle_size">Vehicle Size:</label>
+        <select name="vehicle_size" required>
+            <option value="">-- Select Size --</option>
+            <option value="5-seater" {% if vehicle.vehicle_size == '5-seater' %}selected{% endif %}>5-seater</option>
+            <option value="7-seater" {% if vehicle.vehicle_size == '7-seater' %}selected{% endif %}>7-seater</option>
+            <option value="8-seater" {% if vehicle.vehicle_size == '8-seater' %}selected{% endif %}>8-seater</option>
+            <option value="16-seater" {% if vehicle.vehicle_size == '16-seater' %}selected{% endif %}>16-seater</option>
+            <option value="24-seater" {% if vehicle.vehicle_size == '24-seater' %}selected{% endif %}>24-seater</option>
+            <option value="28-seater" {% if vehicle.vehicle_size == '28-seater' %}selected{% endif %}>28-seater</option>
+        </select>
+        <br><br>
+
+        <button type="submit">Update Vehicle</button>
+    </form>
+</div>
+</body>
+</html>

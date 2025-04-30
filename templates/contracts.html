@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Contracts</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>All Contracts</h1>
+        <a href="{{ url_for('manager.add_contract') }}" class="btn">+ Add New Contract</a>
+
+        {% for contract in contracts %}
+            <div class="contract-box">
+                <h2>Contract #{{ contract.contract_number }} – {{ contract.school_name }}</h2>
+<p><strong>School Postcode:</strong> {{ contract.school_postcode }}</p>
+<p><strong>School Start Time:</strong> {{ contract.school_start_time.strftime('%H:%M') }}</p>
+<p><strong>School Finish Time:</strong> {{ contract.school_finish_time.strftime('%H:%M') }}</p>
+<p><strong>Route Start:</strong> {{ contract.route_start_time.strftime('%H:%M') }}</p>
+<p><strong>Route Finish:</strong> {{ contract.route_finish_time.strftime('%H:%M') }}</p>
+<p><strong>Vehicle Size:</strong> {{ contract.required_vehicle_size }}</p>
+<p><strong>Commute Time:</strong> {{ contract.commute_time }} mins</p>
+<p><strong>Escort Required:</strong> {{ 'Yes' if contract.escort_required else 'No' }}</p>
+
+<h4>Children:</h4>
+{% if contract.children %}
+    <ul>
+        {% for child in contract.children %}
+            <li>
+                <strong>Name:</strong> {{ child.name }}<br>
+                <strong>Address:</strong> {{ child.address }}<br>
+                <strong>Postcode:</strong> {{ child.child_postcode }}
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p><em>No children linked to this contract.</em></p>
+{% endif %}
+
+
+                <div class="contract-actions">
+                    <a href="{{ url_for('manager.edit_contract', contract_id=contract.id) }}" class="btn btn-primary">Edit</a>
+                    <form action="{{ url_for('manager.delete_contract', contract_id=contract.id) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this contract?')">Delete</button>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

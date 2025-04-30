@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Driver Allocation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <a href="{{ url_for('manager_dashboard') }}" class="back-link">← Return to Dashboard</a>
+</head>
+<body>
+    <h1>Driver Allocation</h1>
+
+    <form method="POST">
+        
+
+        <div class="form-group">
+            <label for="contract_id">Contract:</label>
+            <select name="contract_id" required>
+                {% for contract in contracts %}
+                    <option value="{{ contract.id }}">{{ contract.contract_number }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="driver_id">Driver:</label>
+            <select name="driver_id" required>
+                {% for driver in drivers %}
+                    <option value="{{ driver.id }}">{{ driver.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="driver_shift">Driver Shift:</label>
+            <select name="driver_shift" required>
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+                <option value="ALL">ALL</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="escort_id">Escort:</label>
+            <select name="escort_id">
+                <option value="">None</option>
+                {% for escort in escorts %}
+                    <option value="{{ escort.id }}">{{ escort.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="escort_shift">Escort Shift:</label>
+            <select name="escort_shift">
+                <option value="">None</option>
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+                <option value="ALL">ALL</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Days of the Week:</label><br>
+            <label><input type="checkbox" name="contract_days" value="Monday"> Monday</label>
+            <label><input type="checkbox" name="contract_days" value="Tuesday"> Tuesday</label>
+            <label><input type="checkbox" name="contract_days" value="Wednesday"> Wednesday</label>
+            <label><input type="checkbox" name="contract_days" value="Thursday"> Thursday</label>
+            <label><input type="checkbox" name="contract_days" value="Friday"> Friday</label>
+            <label><input type="checkbox" name="contract_days" value="Saturday"> Saturday</label>
+            <label><input type="checkbox" name="contract_days" value="Sunday"> Sunday</label>
+        </div>
+
+        <div class="form-group">
+            <label for="contract_date">Start Date:</label>
+            <input type="date" name="contract_date" id="contract_date">
+        </div>
+
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="repeat_all_week" id="repeat_all_week" value="1">
+                Repeat Weekly (indefinitely)
+            </label>
+        </div>
+
+        <button type="submit">Allocate</button>
+    </form>
+
+    <hr>
+
+    <h2>Current Allocations</h2>
+    <table border="1" cellpadding="5">
+        <thead>
+            <tr>
+                <th>Contract</th>
+                <th>Driver</th>
+                <th>Escort</th>
+                <th>Driver Shift</th>
+                <th>Escort Shift</th>
+                <th>Days</th>
+                <th>Start Date</th>
+                <th>Repeats Weekly</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for alloc in allocations %}
+            <tr>
+                <td>{{ alloc.contract_number }}</td>
+                <td>{{ alloc.driver.name }}</td>
+                <td>{{ alloc.escort.name if alloc.escort else 'None' }}</td>
+                <td>{{ alloc.driver_shift }}</td>
+                <td>{{ alloc.escort_shift or 'None' }}</td>
+                <td>{{ alloc.contract_days }}</td>
+                <td>{{ alloc.contract_date }}</td>
+                <td>{{ 'Yes' if alloc.repeat_all_week else 'No' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        // Disable contract date if "repeat all week" is checked
+        const repeatBox = document.getElementById('repeat_all_week');
+        const dateInput = document.getElementById('contract_date');
+
+        repeatBox.addEventListener('change', () => {
+            dateInput.disabled = repeatBox.checked;
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>👥 Staff Management</h2>
+<a href="{{ url_for('manager_dashboard') }}" class="back-link">← Return to Dashboard</a>
+
+<div class="mb-3">
+  <a href="{{ url_for('add_driver') }}" class="btn btn-success btn-sm">Add Driver</a>
+  <a href="{{ url_for('add_escort') }}" class="btn btn-success btn-sm">Add Escort</a>
+  <a href="{{ url_for('add_mechanic') }}" class="btn btn-success btn-sm">Add Mechanic</a>
+</div>
+
+<hr>
+
+<h3>🚗 Drivers</h3>
+<ul>
+  {% for d in drivers %}
+    <li style="margin-bottom: 10px;">
+      <strong>{{ d.name }}</strong> ({{ d.username }})
+      <a href="{{ url_for('edit_driver', driver_id=d.id) }}" class="btn btn-sm btn-warning">Edit</a>
+      <form action="{{ url_for('delete_driver', driver_id=d.id) }}" method="POST" style="display:inline;">
+        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this driver?')">Delete</button>
+      </form>
+      <a href="{{ url_for('reset_user_password', role='driver', user_id=d.id) }}" class="btn btn-sm btn-info">Reset Password</a>
+    </li>
+  {% else %}
+    <li>No drivers found.</li>
+  {% endfor %}
+</ul>
+
+<h3>🚶 Escorts</h3>
+<ul>
+  {% for e in escorts %}
+    <li style="margin-bottom: 10px;">
+      <strong>{{ e.name }}</strong> ({{ e.username }})
+      <a href="{{ url_for('edit_escort', escort_id=e.id) }}" class="btn btn-sm btn-warning">Edit</a>
+      <form action="{{ url_for('delete_escort', escort_id=e.id) }}" method="POST" style="display:inline;">
+        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this escort?')">Delete</button>
+      </form>
+      <a href="{{ url_for('reset_user_password', role='escort', user_id=e.id) }}" class="btn btn-sm btn-info">Reset Password</a>
+    </li>
+  {% else %}
+    <li>No escorts found.</li>
+  {% endfor %}
+</ul>
+
+<h3>🔧 Mechanics</h3>
+<ul>
+  {% for m in mechanics %}
+    <li style="margin-bottom: 10px;">
+      <strong>{{ m.name }}</strong> ({{ m.username }})
+      <a href="{{ url_for('edit_mechanic', mechanic_id=m.id) }}" class="btn btn-sm btn-warning">Edit</a>
+      <form action="{{ url_for('delete_mechanic', mechanic_id=m.id) }}" method="POST" style="display:inline;">
+        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this mechanic?')">Delete</button>
+      </form>
+      <a href="{{ url_for('reset_user_password', role='mechanic', user_id=m.id) }}" class="btn btn-sm btn-info">Reset Password</a>
+    </li>
+  {% else %}
+    <li>No mechanics found.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

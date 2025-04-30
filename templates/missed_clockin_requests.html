@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Missed Clock-In Requests</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Missed Clock-In Requests</h1>
+
+        {% if requests %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Submitted By</th>
+                        <th>Role</th>
+                        <th>Requested Date</th>
+                        <th>Requested Time</th>
+                        <th>Comment</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in requests %}
+                        <tr>
+                            <td>{{ req.staff_id }}</td>
+                            <td>{{ req.staff_type|capitalize }}</td>
+                            <td>{{ req.requested_date }}</td>
+                            <td>{{ req.requested_time }}</td>
+                            <td>{{ req.comment or '—' }}</td>
+                            <td>{{ req.status }}</td>
+                            <td>
+                                {% if req.status == 'Pending' %}
+                                    <form method="POST" action="{{ url_for('handle_missed_clockin', request_id=req.id, action='approve') }}" style="display:inline-block">
+                                        <button type="submit" class="btn">Approve</button>
+                                    </form>
+                                    <form method="POST" action="{{ url_for('handle_missed_clockin', request_id=req.id, action='decline') }}" style="display:inline-block">
+                                        <button type="submit" class="btn btn-danger">Decline</button>
+                                    </form>
+                                {% else %}
+                                    <em>{{ req.status }}</em>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No missed clock-in requests submitted.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

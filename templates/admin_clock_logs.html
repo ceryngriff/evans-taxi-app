@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Staff Clock-In Logs</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <a href="{{ url_for('manager_dashboard') }}" class="back-link">← Return to Dashboard</a>
+</head>
+<body>
+    <h1>Staff Clock-In Logs</h1>
+
+    <form method="POST">
+        <label>Staff Type:</label>
+        <select name="staff_type">
+            <option value="">All</option>
+            <option value="driver">Driver</option>
+            <option value="escort">Escort</option>
+        </select>
+
+        <label>Staff ID:</label>
+        <input type="text" name="staff_id">
+
+        <label>Start Date:</label>
+        <input type="date" name="start_date">
+
+        <label>End Date:</label>
+        <input type="date" name="end_date">
+
+        <button type="submit">Filter</button>
+    </form>
+
+    <h2>Hours Worked This Week</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Staff Type</th>
+                <th>Staff Name</th>
+                <th>Total Hours</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for (stype, sid), duration in formatted_hours.items() %}
+                <tr>
+                    <td>{{ stype.capitalize() }}</td>
+                    <td>
+                        {% if stype == 'driver' %}
+                            {{ (drivers|selectattr('id', 'equalto', sid)|first).name }}
+                        {% elif stype == 'escort' %}
+                            {{ (escorts|selectattr('id', 'equalto', sid)|first).name }}
+                        {% else %}
+                            Unknown
+                        {% endif %}
+                    </td>
+                    <td>{{ duration }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Clock-In Records</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Staff Type</th>
+                <th>Staff Name</th>
+                <th>Date</th>
+                <th>Clock In</th>
+                <th>Clock Out</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+                <tr>
+                    <td>{{ log.staff_type.capitalize() }}</td>
+                    <td>
+                        {% if log.staff_type == 'driver' %}
+                            {{ (drivers|selectattr('id', 'equalto', log.staff_id)|first).name }}
+                        {% elif log.staff_type == 'escort' %}
+                            {{ (escorts|selectattr('id', 'equalto', log.staff_id)|first).name }}
+                        {% else %}
+                            Unknown
+                        {% endif %}
+                    </td>
+                    <td>{{ log.date }}</td>
+                    <td>{{ log.clock_in_time.strftime('%H:%M:%S') if log.clock_in_time else '—' }}</td>
+                    <td>{{ log.clock_out_time.strftime('%H:%M:%S') if log.clock_out_time else '—' }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit School Contract</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .child-entry {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .remove-btn {
+            background: crimson;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            margin-top: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Edit Contract: {{ contract.contract_number }}</h1>
+    <form method="POST">
+        <label>Contract Number:</label>
+        <input type="text" name="contract_number" value="{{ contract.contract_number }}" required>
+
+        <label>School Name:</label>
+        <input type="text" name="school_name" value="{{ contract.school_name }}" required>
+
+        <label>School Start Time:</label>
+        <input type="time" name="school_start_time" value="{{ contract.school_start_time.strftime('%H:%M') }}" required>
+
+        <label>School Finish Time:</label>
+        <input type="time" name="school_finish_time" value="{{ contract.school_finish_time.strftime('%H:%M') }}" required>
+
+        <h3>Children:</h3>
+        <div id="children-container">
+            {% for child in contract.children %}
+                <div class="child-entry">
+                    <label>Child Name:</label>
+                    <input type="text" name="child_name" value="{{ child.name }}" required>
+                    <label>Address:</label>
+                    <input type="text" name="child_address" value="{{ child.address }}" required>
+                    <button type="button" class="remove-btn" onclick="removeChild(this)">Remove</button>
+                </div>
+            {% endfor %}
+        </div>
+
+        <button type="button" onclick="addChild()">+ Add Child</button>
+        <br><br>
+        <button type="submit">Update Contract</button>
+    </form>
+
+    <br>
+    <a href="{{ url_for('view_contracts') }}">← Back to Contracts</a>
+</div>
+
+<script>
+    function addChild() {
+        const container = document.getElementById('children-container');
+        const div = document.createElement('div');
+        div.className = 'child-entry';
+        div.innerHTML = `
+            <label>Child Name:</label>
+            <input type="text" name="child_name" required>
+            <label>Address:</label>
+            <input type="text" name="child_address" required>
+            <button type="button" class="remove-btn" onclick="removeChild(this)">Remove</button>
+        `;
+        container.appendChild(div);
+    }
+
+    function removeChild(button) {
+        button.parentElement.remove();
+    }
+</script>
+</body>
+</html>

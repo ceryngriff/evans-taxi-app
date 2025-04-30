@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to Evan's Taxis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_updated.css') }}">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            --accent: #00ffff;
+            --accent-soft: rgba(0, 255, 255, 0.1);
+            --text-color: #ffffff;
+            --shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: var(--bg-gradient);
+            color: var(--text-color);
+        }
+
+        .welcome-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 50px 40px;
+            border-radius: 20px;
+            text-align: center;
+            backdrop-filter: blur(12px);
+            box-shadow: var(--shadow);
+            max-width: 600px;
+        }
+
+        .welcome-card h1 {
+            font-size: 2.5rem;
+            color: var(--accent);
+            text-shadow: 0 0 10px var(--accent);
+            margin-bottom: 20px;
+        }
+
+        .welcome-card p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+        }
+
+        .login-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .login-btn {
+            background-color: var(--accent);
+            color: #000;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-decoration: none;
+            transition: 0.3s;
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .login-btn:hover {
+            background-color: #00c6c6;
+            box-shadow: 0 0 14px var(--accent);
+        }
+
+        @media (max-width: 600px) {
+            .welcome-card {
+                padding: 30px 20px;
+            }
+
+            .login-btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="welcome-card">
+        <h1>🚖 Welcome to Evan's Taxis</h1>
+        <p>Please select your login option:</p>
+        <div class="login-links">
+            <a href="{{ url_for('auth.staff_login') }}" class="login-btn">👥 Staff Login</a>
+            <a href="{{ url_for('auth.manager_login') }}" class="login-btn">🛠️ Manager Login</a>
+            <a href="{{ url_for('auth.mechanic_login') }}" class="login-btn">🔧 Mechanic Login</a>
+        </div>
+    </div>
+</body>
+</html>

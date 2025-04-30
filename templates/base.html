@@ -1,0 +1,209 @@
+<!-- Manager Calendar with Stark-Style Theme & Responsive Sidebar -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+<meta name="theme-color" content="#f97316">
+  <title>{% block title %}Evans Taxis{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      --accent: #00ffff;
+      --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: var(--font-main);
+      background: var(--bg-gradient);
+      color: white;
+    }
+
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      background: #1e1e2f;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--accent);
+      box-shadow: 0 2px 10px rgba(0, 255, 255, 0.1);
+    }
+
+    .topbar-inner h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+
+    .menu-toggle {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .sidebar-logo {
+      padding: 1rem;
+      background: #111;
+      text-align: center;
+    }
+
+    .logo {
+      max-width: 140px;
+    }
+
+    .sidebar {
+      width: 260px;
+      background: #111;
+      padding: 1rem;
+      overflow-y: auto;
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar.visible {
+      transform: translateX(0);
+    }
+
+    .sidebar-nav .nav-links a {
+      display: block;
+      color: #00ffff;
+      text-decoration: none;
+      padding: 10px 0;
+      transition: background 0.2s ease;
+    }
+
+    .sidebar-nav .nav-links a:hover {
+      background-color: #222;
+      padding-left: 10px;
+    }
+
+    .main-content {
+      flex-grow: 1;
+      padding: 2rem;
+      overflow-x: auto;
+    }
+
+    @media (max-width: 768px) {
+      .layout {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        transform: translateX(-100%);
+        position: absolute;
+        z-index: 999;
+        height: 100vh;
+      }
+
+      .sidebar.visible {
+        transform: translateX(0);
+      }
+    }
+  </style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+    <h1 class="app-title">Evans taxis Merthyr</h1>
+  </div>
+  <div class="sidebar-logo">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo">
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <nav class="sidebar-nav">
+      {% if current_user.is_authenticated and current_user.role == 'manager' %}
+      <ul class="nav-links">
+        <a href="{{ url_for('schedule_day', date_str=today.strftime('%Y-%m-%d')) }}">📅 Daily Schedule</a>
+        <a href="{{ url_for('manager.manage_school_calendar') }}">📅 Manage School term times</a>
+        <a href="{{ url_for('staff_management') }}">🧍 staff_managment</a>
+        <a href="{{ url_for('calendar_view') }}">📅 view schools calendar</a>
+        <a href="{{ url_for('scheduler.scheduler_view') }}">Scheduler</a>
+        <a href="{{ url_for('driverallocation') }}">🔁 Assign a Driver</a>
+        <a href="{{ url_for('view_driverallocation') }}">👀 View Driver assignments</a>
+        <a href="{{ url_for('unallocated_contracts') }}">❌ Unallocated Contracts</a>
+        <a href="{{ url_for('view_contracts') }}">📄 View school Contracts</a>
+        <a href="{{ url_for('missed_runs') }}">🚨 Missed Runs</a>
+        <a href="{{ url_for('view_vehicles') }}">🚐 Vehicles</a>
+        <a href="{{ url_for('view_vehicle_checks') }}">📝 Driver Vehicle Checks</a>
+        <a href="{{ url_for('manage_leave') }}">🛫 Leave Requests</a>
+        <a href="{{ url_for('view_fuel_logs') }}">⛽ View Fuel Logs</a>
+        <a href="{{ url_for('admin_clock_logs') }}">🕒 Clock Logs</a>
+        <a href="{{ url_for('view_missed_requests') }}">⏳ Missed Clock Times</a>
+        <a href="{{ url_for('generate_quote') }}">Generate a quote</a>
+        <a href="{{ url_for('manager.manage_tariffs') }}">Tariff management</a>
+        <a href="{{ url_for('admin_feedback') }}">💬 Feedback</a>
+        <a href="{{ url_for('allocate_mechanic_job') }}">🧰 Allocate Mechanic Job</a>
+        <a href="{{ url_for('weekly_driver_summary') }}">📊 Weekly Driver Summary</a>
+        <a href="{{ url_for('manager.review_mechanic_jobs') }}">Review Mechanic Jobs</a>
+        <a href="{{ url_for('logout') }}">🚪 Logout</a>
+      </ul>
+      {% elif current_user.role in ['driver', 'escort'] %}
+      <ul class="nav-links">
+        <button type="submit">⏱️ Clock In</button>
+        <button type="submit">✅ Clock Out</button>
+        <a href="{{ url_for('staff_dashboard') }}">🏠 Dashboard</a>
+        <a href="{{ url_for('staff_calendar') }}">📆 My Calendar</a>
+        <a href="{{ url_for('vehicle_check') }}">✅ Submit Vehicle Check</a>
+        <a href="{{ url_for('log_fuel') }}">⛽ Log Fuel Card</a>
+        <a href="{{ url_for('logout') }}">🚪 Logout</a>
+        <a href="{{ url_for('change_manager_password') }}">Change Password</a>
+        <a href="{{ url_for('privacy') }}">🔒 Privacy</a>
+        <a href="{{ url_for('terms') }}">📜 Terms</a>
+      </ul>
+      {% elif current_user.role == 'mechanic' %}
+      <ul class="nav-links">
+        <a href="{{ url_for('mechanic.dashboard') }}">Mechanic Dashboard</a>
+        <a href="{{ url_for('view_mechanic_jobs') }}">🔍 View Jobs</a>
+        <a href="{{ url_for('view_vehicles') }}">🚐 View All Vehicles</a>
+        <a href="{{ url_for('view_vehicle_checks') }}">🧾 Vehicle Check Logs</a>
+        <a href="{{ url_for('logout') }}">🚪 Logout</a>
+        </ul>
+      {% endif %}
+    </nav>
+  </aside>
+
+  <main class="main-content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById("sidebar");
+    sidebar.classList.toggle("visible");
+  }
+
+  
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/static/service-worker.js')
+      .then(() => console.log('✅ Service Worker Registered'))
+      .catch(err => console.error('Service Worker registration failed:', err));
+  }
+</script>
+</body>
+</html>
