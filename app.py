@@ -2065,8 +2065,7 @@ if __name__ == '__main__':
         for rule in app.url_map.iter_rules():
             print(rule)
 
-    # 👇 only run AFTER the app context
-    app.run(debug=True)
+app.run(debug=True)
 
 
 
