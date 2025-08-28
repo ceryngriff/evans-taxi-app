@@ -23,9 +23,17 @@ from geopy.geocoders import Nominatim
 import time
 from sqlalchemy import text
 
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///school_bus.db'
-app.config['SECRET_KEY'] = 'your_secret_key' \
+app = Flask(__name__, instance_relative_config=True)
+
+# Read DB URL from the environment (Render’s DATABASE_URL).
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///school_bus.db")
+if DATABASE_URL.startswith("postgres://"):  # normalize for SQLAlchemy
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret")
+
 
 
 db.init_app(app)
@@ -2050,13 +2058,8 @@ def reset_user_password(role, user_id):
 
     return render_template('reset_user_password.html', user=user, role=role)
 
-
-
-
 if __name__ == '__main__':
-    # 👇 this is the fix
-    with app.app_context():
-        db.create_all()
+    
 
         print("Registered Routes:")
         for rule in app.url_map.iter_rules():
