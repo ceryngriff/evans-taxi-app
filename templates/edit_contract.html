@@ -1,81 +1,145 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Edit School Contract</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <style>
-        .child-entry {
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-        .remove-btn {
-            background: crimson;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            margin-top: 5px;
-            cursor: pointer;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Edit School Contract</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    h1, h3 { color: #00ffff; }
+    label { display: block; margin-top: 10px; }
+    .container { max-width: 900px; margin: 0 auto; }
+    .child-entry {
+      border: 1px solid #ccc; border-radius: 6px;
+      padding: 12px; margin-bottom: 12px;
+      display: grid; grid-template-columns: 1fr; gap: 6px;
+    }
+    .actions { margin-top: 14px; display: flex; gap: 8px; }
+    .btn { cursor: pointer; border: none; padding: 8px 12px; border-radius: 6px; }
+    .btn-add { background: #0b5; color: #fff; font-weight: 600; }
+    .btn-remove { background: crimson; color: #fff; }
+    .btn-primary { background: #007bff; color: #fff; }
+    .back-link {
+      display: inline-block; margin-bottom: 20px; text-decoration: none; color: #007bff; font-weight: bold;
+    }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 700px) { .row { grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body>
-<div class="container">
+  <div class="container">
+    <a href="{{ url_for('view_contracts') }}" class="back-link">← Back to Contracts</a>
     <h1>Edit Contract: {{ contract.contract_number }}</h1>
+
     <form method="POST">
-        <label>Contract Number:</label>
-        <input type="text" name="contract_number" value="{{ contract.contract_number }}" required>
-
-        <label>School Name:</label>
-        <input type="text" name="school_name" value="{{ contract.school_name }}" required>
-
-        <label>School Start Time:</label>
-        <input type="time" name="school_start_time" value="{{ contract.school_start_time.strftime('%H:%M') }}" required>
-
-        <label>School Finish Time:</label>
-        <input type="time" name="school_finish_time" value="{{ contract.school_finish_time.strftime('%H:%M') }}" required>
-
-        <h3>Children:</h3>
-        <div id="children-container">
-            {% for child in contract.children %}
-                <div class="child-entry">
-                    <label>Child Name:</label>
-                    <input type="text" name="child_name" value="{{ child.name }}" required>
-                    <label>Address:</label>
-                    <input type="text" name="child_address" value="{{ child.address }}" required>
-                    <button type="button" class="remove-btn" onclick="removeChild(this)">Remove</button>
-                </div>
-            {% endfor %}
+      <!-- core contract info -->
+      <div class="row">
+        <div>
+          <label>Contract Number:</label>
+          <input type="text" name="contract_number" value="{{ contract.contract_number }}" required>
         </div>
+        <div>
+          <label>School Name:</label>
+          <input type="text" name="school_name" value="{{ contract.school_name }}" required>
+        </div>
+      </div>
 
-        <button type="button" onclick="addChild()">+ Add Child</button>
-        <br><br>
-        <button type="submit">Update Contract</button>
+      <div class="row">
+        <div>
+          <label>School Start Time:</label>
+          <input type="time" name="school_start_time" value="{{ contract.school_start_time.strftime('%H:%M') }}" required>
+        </div>
+        <div>
+          <label>School Finish Time:</label>
+          <input type="time" name="school_finish_time" value="{{ contract.school_finish_time.strftime('%H:%M') }}" required>
+        </div>
+      </div>
+
+      <hr>
+
+      <!-- children -->
+      <h3>Children</h3>
+      <div id="children-container">
+        {% for child in contract.children %}
+          <div class="child-entry">
+            <div class="row">
+              <div>
+                <label>Child Name:</label>
+                <input type="text" name="child_name[]" value="{{ child.name }}" required>
+              </div>
+              <div>
+                <label>Child Address:</label>
+                <input type="text" name="child_address[]" value="{{ child.address }}" required>
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label>Child Postcode (optional):</label>
+                <input type="text" name="child_postcode[]" value="{{ child.postcode or '' }}">
+              </div>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn btn-remove remove-child">Remove</button>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="actions">
+        <button type="button" id="add-child-btn" class="btn btn-add">+ Add Child</button>
+      </div>
+
+      <br>
+      <button type="submit" class="btn btn-primary">Update Contract</button>
     </form>
+  </div>
 
-    <br>
-    <a href="{{ url_for('view_contracts') }}">← Back to Contracts</a>
-</div>
+  <script>
+    const container = document.getElementById('children-container');
+    const addBtn = document.getElementById('add-child-btn');
 
-<script>
-    function addChild() {
-        const container = document.getElementById('children-container');
-        const div = document.createElement('div');
-        div.className = 'child-entry';
-        div.innerHTML = `
+    // template for a new child block
+    function newChildBlock() {
+      const div = document.createElement('div');
+      div.className = 'child-entry';
+      div.innerHTML = `
+        <div class="row">
+          <div>
             <label>Child Name:</label>
-            <input type="text" name="child_name" required>
-            <label>Address:</label>
-            <input type="text" name="child_address" required>
-            <button type="button" class="remove-btn" onclick="removeChild(this)">Remove</button>
-        `;
-        container.appendChild(div);
+            <input type="text" name="child_name[]" required>
+          </div>
+          <div>
+            <label>Child Address:</label>
+            <input type="text" name="child_address[]" required>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Child Postcode (optional):</label>
+            <input type="text" name="child_postcode[]">
+          </div>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn btn-remove remove-child">Remove</button>
+        </div>
+      `;
+      return div;
     }
 
-    function removeChild(button) {
-        button.parentElement.remove();
-    }
-</script>
+    // add child
+    addBtn.addEventListener('click', () => {
+      container.appendChild(newChildBlock());
+    });
+
+    // remove child via event delegation
+    container.addEventListener('click', (e) => {
+      if (e.target.classList.contains('remove-child')) {
+        const entry = e.target.closest('.child-entry');
+        if (!entry) return;
+        if (entry.remove) entry.remove();
+        else if (entry.parentNode) entry.parentNode.removeChild(entry);
+      }
+    });
+  </script>
 </body>
 </html>

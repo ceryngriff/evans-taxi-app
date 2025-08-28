@@ -108,33 +108,45 @@
                 <input type="text" name="child_address[]" required>
                 <label>Child Postcode:</label>
                 <input type="text" name="child_postcode[]" required>
+                 <button type="button" class="remove-child">Remove</button>
             </div>
         </div>
 
-        <button type="button" onclick="addChild()">+ Add Another Child</button>
+        <button type="button" id="add-child-btn">+ Add Another Child</button>
         <br><br>
 
         <button type="submit">Save Contract</button>
     </form>
 
     <script>
-        function addChild() {
-            const container = document.getElementById("children-section");
-            const newChild = document.createElement("div");
-            newChild.classList.add("child-group");
+  const container = document.getElementById('children-section');
+  const addBtn = document.getElementById('add-child-btn');
 
-            newChild.innerHTML = `
-                <label>Child Name:</label>
-                <input type="text" name="child_name[]" required>
-                <label>Child Address:</label>
-                <input type="text" name="child_address[]" required>
-                <label>Child Postcode:</label>
-                <input type="text" name="child_postcode[]" required>
-                <hr>
-            `;
-            container.appendChild(newChild);
-        }
-    </script>
+  // Add a new child row
+  addBtn.addEventListener('click', () => {
+    const newChild = document.createElement('div');
+    newChild.classList.add('child-group');
+    newChild.innerHTML = `
+      <label>Child Name:</label>
+      <input type="text" name="child_name[]" required>
+      <label>Child Address:</label>
+      <input type="text" name="child_address[]" required>
+      <label>Child Postcode:</label>
+      <input type="text" name="child_postcode[]" required>
+      <button type="button" class="remove-child">Remove</button>
+    `;
+    container.appendChild(newChild);
+  });
 
+  // Remove a child row (event delegation)
+  container.addEventListener('click', (e) => {
+    if (e.target.classList.contains('remove-child')) {
+      const group = e.target.closest('.child-group');
+      if (!group) return;
+      if (group.remove) group.remove();
+      else if (group.parentNode) group.parentNode.removeChild(group);
+    }
+  });
+</script>
 </body>
 </html>

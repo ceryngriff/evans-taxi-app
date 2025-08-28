@@ -47,9 +47,8 @@
   </style>
 </head>
 <body>
-  <a href="{{ url_for('index') }}" class="back-link">← Return to Dashboard</a>
-
   <h1>Unallocated Contracts</h1>
+  <a href="{{ url_for('manager_dashboard') }}" class="back-link">← Return to Dashboard</a>
 
   <!-- Filter Form -->
   <form method="GET" action="{{ url_for('unallocated_contracts') }}">

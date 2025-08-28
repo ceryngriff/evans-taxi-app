@@ -128,7 +128,6 @@
     <nav class="sidebar-nav">
       {% if current_user.is_authenticated and current_user.role == 'manager' %}
       <ul class="nav-links">
-        <a href="{{ url_for('schedule_day', date_str=today.strftime('%Y-%m-%d')) }}">📅 Daily Schedule</a>
         <a href="{{ url_for('manager.manage_school_calendar') }}">📅 Manage School term times</a>
         <a href="{{ url_for('staff_management') }}">🧍 staff_managment</a>
         <a href="{{ url_for('calendar_view') }}">📅 view schools calendar</a>
