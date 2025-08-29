@@ -8,7 +8,7 @@ db = SQLAlchemy()
 class Manager(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
-    password = db.Column(db.String(100), nullable=False)
+    password = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), default='manager')
     def get_id(self):
      return f"{self.role}:{self.id}"
@@ -23,7 +23,7 @@ class Driver(UserMixin, db.Model):
     phone = db.Column(db.String(20))
     badge_renewal_date = db.Column(db.Date)
     username = db.Column(db.String(100), unique=True, nullable=False)
-    password = db.Column(db.String(100), nullable=False)
+    password = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), default='driver')
     base_postcode = db.Column(db.String(20))
     shift = db.Column(db.String(10), default='Both') 
@@ -47,7 +47,7 @@ class Escort(UserMixin, db.Model):
     phone = db.Column(db.String(20))
     address = db.Column(db.String(200))
     username = db.Column(db.String(100), unique=True, nullable=False)
-    password = db.Column(db.String(100), nullable=False)
+    password = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), default='escort')
     base_postcode = db.Column(db.String(20))
 
