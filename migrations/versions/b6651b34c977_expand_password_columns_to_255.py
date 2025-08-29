@@ -1,29 +1,59 @@
-"""Expand password columns to 255
+"""Expand password columns to 255"""
 
-Revision ID: b6651b34c977
-Revises: fc04238e494b
-Create Date: 2025-08-29 10:11:34.705987
+from alembic import op
+import sqlalchemy as sa
 
-"""
+# revision identifiers, used by Alembic.
+revision = "b6651b34c977"
+down_revision = "fc04238e494b"
+branch_labels = None
+depends_on = None
+
+
 def upgrade():
-    # expand password column to 255 on all user tables
-    for table in ("manager", "driver", "escort", "mechanic"):
-        with op.batch_alter_table(table, schema=None) as batch_op:
-            batch_op.alter_column(
-                "password",
-                existing_type=sa.String(length=100),
-                type_=sa.String(length=255),
-                existing_nullable=False,
-            )
+    with op.batch_alter_table("manager") as b:
+        b.alter_column("password",
+                       existing_type=sa.String(length=100),
+                       type_=sa.String(length=255),
+                       existing_nullable=False)
+
+    with op.batch_alter_table("driver") as b:
+        b.alter_column("password",
+                       existing_type=sa.String(length=100),
+                       type_=sa.String(length=255),
+                       existing_nullable=False)
+
+    with op.batch_alter_table("escort") as b:
+        b.alter_column("password",
+                       existing_type=sa.String(length=100),
+                       type_=sa.String(length=255),
+                       existing_nullable=False)
+
+    with op.batch_alter_table("mechanic") as b:
+        b.alter_column("password",
+                       existing_type=sa.String(length=100),
+                       type_=sa.String(length=255),
+                       existing_nullable=False)
+
 
 def downgrade():
-    # revert back to 100 if needed
-    for table in ("manager", "driver", "escort", "mechanic"):
-        with op.batch_alter_table(table, schema=None) as batch_op:
-            batch_op.alter_column(
-                "password",
-                existing_type=sa.String(length=255),
-                type_=sa.String(length=100),
-                existing_nullable=False,
-            )
-
+    with op.batch_alter_table("manager") as b:
+        b.alter_column("password",
+                       existing_type=sa.String(length=255),
+                       type_=sa.String(length=100),
+                       existing_nullable=False)
+    with op.batch_alter_table("driver") as b:
+        b.alter_column("password",
+                       existing_type=sa.String(length=255),
+                       type_=sa.String(length=100),
+                       existing_nullable=False)
+    with op.batch_alter_table("escort") as b:
+        b.alter_column("password",
+                       existing_type=sa.String(length=255),
+                       type_=sa.String(length=100),
+                       existing_nullable=False)
+    with op.batch_alter_table("mechanic") as b:
+        b.alter_column("password",
+                       existing_type=sa.String(length=255),
+                       type_=sa.String(length=100),
+                       existing_nullable=False)
