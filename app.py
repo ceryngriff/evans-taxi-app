@@ -1345,7 +1345,7 @@ def create_manager():
             db.session.add(manager)
             db.session.commit()
             flash('Manager account created successfully!', 'success')
-            return redirect(url_for('manager_login'))
+            return redirect(url_for('auth.manager_login'))
 
     return render_template('create_manager.html')
 
