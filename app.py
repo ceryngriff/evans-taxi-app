@@ -1334,20 +1334,24 @@ def admin_clock_logs():
 @app.route('/create-manager', methods=['GET', 'POST'])
 def create_manager():
     if request.method == 'POST':
-        username = request.form['username']
+        username = request.form['username'].strip()
         password = request.form['password']
 
         existing = Manager.query.filter_by(username=username).first()
         if existing:
             flash('Username already exists.', 'danger')
         else:
-            manager = Manager(username=username, password=password)
+            manager = Manager(
+                username=username,
+                password=generate_password_hash(password)  # <-- hash!
+            )
             db.session.add(manager)
             db.session.commit()
             flash('Manager account created successfully!', 'success')
-            return redirect(url_for('auth.manager_login'))
+            return redirect(url_for('auth.manager_login'))  # note blueprint prefix
 
     return render_template('create_manager.html')
+
 
 # ---------- Unallocated contracts ----------
 @app.route('/unallocated-contracts', methods=['GET'])
