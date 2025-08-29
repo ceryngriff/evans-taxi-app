@@ -2058,14 +2058,12 @@ def reset_user_password(role, user_id):
 
     return render_template('reset_user_password.html', user=user, role=role)
 
-if __name__ == '__main__':
-    
+if __name__ == "__main__":
+    print("Registered Routes:")
+    for rule in app.url_map.iter_rules():
+        print(rule)
+    app.run(host="0.0.0.0", port=5000, debug=True)
 
-        print("Registered Routes:")
-        for rule in app.url_map.iter_rules():
-            print(rule)
-
-app.run(debug=True)
 
 
 
