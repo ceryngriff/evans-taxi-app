@@ -1,52 +1,144 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>All Contracts</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>All Contracts</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    /* tiny extras so it looks neat without touching your main css */
+    .search-wrap{margin:16px 0 24px}
+    .search-input{width:100%;max-width:520px;padding:10px 12px;border-radius:10px;border:1px solid #334155}
+    .muted{color:#94a3b8;font-size:13px;margin-top:6px}
+    .result-card{border:1px solid #1f2937;border-radius:12px;padding:14px 16px;margin:10px 0}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:6px 16px}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>All Contracts</h1>
-        <a href="{{ url_for('manager.add_contract') }}" class="btn">+ Add New Contract</a>
+  <div class="container">
+    <h1>All Contracts</h1>
+    <a href="{{ url_for('manager.add_contract') }}" class="btn">+ Add New Contract</a>
 
-        {% for contract in contracts %}
-            <div class="contract-box">
-                <h2>Contract #{{ contract.contract_number }} – {{ contract.school_name }}</h2>
-<p><strong>School Postcode:</strong> {{ contract.school_postcode }}</p>
-<p><strong>School Start Time:</strong> {{ contract.school_start_time.strftime('%H:%M') }}</p>
-<p><strong>School Finish Time:</strong> {{ contract.school_finish_time.strftime('%H:%M') }}</p>
-<p><strong>Route Start:</strong> {{ contract.route_start_time.strftime('%H:%M') }}</p>
-<p><strong>Route Finish:</strong> {{ contract.route_finish_time.strftime('%H:%M') }}</p>
-<p><strong>Vehicle Size:</strong> {{ contract.required_vehicle_size }}</p>
-<p><strong>Commute Time:</strong> {{ contract.commute_time }} mins</p>
-<p><strong>Escort Required:</strong> {{ 'Yes' if contract.escort_required else 'No' }}</p>
-
-<h4>Children:</h4>
-{% if contract.children %}
-    <ul>
-        {% for child in contract.children %}
-            <li>
-                <strong>Name:</strong> {{ child.name }}<br>
-                <strong>Address:</strong> {{ child.address }}<br>
-                <strong>Postcode:</strong> {{ child.child_postcode }}
-            </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p><em>No children linked to this contract.</em></p>
-{% endif %}
-
-
-                <div class="contract-actions">
-                    <a href="{{ url_for('manager.edit_contract', contract_id=contract.id) }}" class="btn btn-primary">Edit</a>
-                    <form action="{{ url_for('manager.delete_contract', contract_id=contract.id) }}" method="POST" style="display:inline;">
-                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this contract?')">Delete</button>
-                    </form>
-                </div>
-            </div>
-        {% endfor %}
+    <!-- SEARCH -->
+    <div class="search-wrap">
+      <input id="contractSearch" class="search-input" type="text"
+             placeholder="Search child, contract #, school, or time (e.g., 09:00, 9, 1300)" />
+      <div id="searchHint" class="muted">Type to search. Clear to see the full list again.</div>
     </div>
+
+    <!-- Live results appear here -->
+    <div id="searchResults" style="display:none;"></div>
+
+    <!-- Your existing static list (hidden when searching) -->
+    <div id="fullList">
+      {% for contract in contracts %}
+        <div class="contract-box">
+          <h2>Contract #{{ contract.contract_number }} – {{ contract.school_name }}</h2>
+
+          <p><strong>School Postcode:</strong> {{ contract.school_postcode }}</p>
+          <p><strong>School Start Time:</strong> {{ contract.school_start_time.strftime('%H:%M') }}</p>
+          <p><strong>School Finish Time:</strong> {{ contract.school_finish_time.strftime('%H:%M') }}</p>
+          <p><strong>Route Start:</strong> {{ contract.route_start_time.strftime('%H:%M') }}</p>
+          <p><strong>Route Finish:</strong> {{ contract.route_finish_time.strftime('%H:%M') }}</p>
+          <p><strong>Vehicle Size:</strong> {{ contract.required_vehicle_size }}</p>
+          <p><strong>Commute Time:</strong> {{ contract.commute_time }} mins</p>
+          <p><strong>Escort Required:</strong> {{ 'Yes' if contract.escort_required else 'No' }}</p>
+
+          <h4>Children:</h4>
+          {% if contract.children %}
+            <ul>
+              {% for child in contract.children %}
+                <li>
+                  <strong>Name:</strong> {{ child.name }}<br>
+                  <strong>Address:</strong> {{ child.address }}<br>
+                  <strong>Postcode:</strong> {{ child.child_postcode }}
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p><em>No children linked to this contract.</em></p>
+          {% endif %}
+
+          <div class="contract-actions">
+            <a href="{{ url_for('manager.edit_contract', contract_id=contract.id) }}" class="btn btn-primary">Edit</a>
+            <form action="{{ url_for('manager.delete_contract', contract_id=contract.id) }}" method="POST" style="display:inline;">
+              <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this contract?')">Delete</button>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    const box = document.getElementById('contractSearch');
+    const resultsEl = document.getElementById('searchResults');
+    const listEl = document.getElementById('fullList');
+    const hint = document.getElementById('searchHint');
+    let timer = null, last = '';
+
+    function esc(s){return (s||'').toString().replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
+    function showResults(show){resultsEl.style.display = show ? '' : 'none'; listEl.style.display = show ? 'none' : ''}
+
+    function card(r){
+      const kids = (r.children||[]).map(ch=>esc(ch.name)).join(', ');
+      return `
+        <div class="result-card">
+          <h3 style="margin:0 0 6px 0;">Contract #${esc(r.contract_number)} – ${esc(r.school_name||'')}</h3>
+          <div class="grid" style="font-size:14px;">
+            <div><strong>School Start:</strong> ${r.school_start_time||'-'}</div>
+            <div><strong>School Finish:</strong> ${r.school_finish_time||'-'}</div>
+            <div><strong>Route Start:</strong> ${r.route_start_time||'-'}</div>
+            <div><strong>Route Finish:</strong> ${r.route_finish_time||'-'}</div>
+            <div><strong>Vehicle Size:</strong> ${esc(r.required_vehicle_size||'-')}</div>
+            <div><strong>Commute:</strong> ${r.commute_time!=null? esc(String(r.commute_time))+' mins':'-'}</div>
+            <div><strong>Escort Required:</strong> ${r.escort_required?'Yes':'No'}</div>
+          </div>
+          ${kids ? `<div style="margin-top:8px;"><strong>Children:</strong> ${kids}</div>` : ''}
+        </div>`;
+    }
+
+    async function search(q){
+      const url = q ? "{{ url_for('manager.api_contracts_search') }}?q="+encodeURIComponent(q)
+                    : "{{ url_for('manager.api_contracts_search') }}";
+      try{
+        const res = await fetch(url);
+        const data = await res.json();
+        const rows = data.results||[];
+        resultsEl.innerHTML = rows.length ? rows.map(card).join('') : '<p class="muted">No matches.</p>';
+      }catch(e){
+        console.error(e);
+        resultsEl.innerHTML = '<p style="color:#ef4444;">Search failed.</p>';
+      }
+    }
+
+    box.addEventListener('input', () => {
+      const q = box.value.trim();
+      if(q === last) return;
+      last = q;
+      clearTimeout(timer);
+      if(q.length === 0){
+        showResults(false);
+        hint.textContent = 'Type to search. Clear to see the full list again.';
+        return;
+      }
+      timer = setTimeout(async () => {
+        showResults(true);
+        hint.textContent = `Results for "${q}"`;
+        await search(q);
+      }, 250);
+    });
+
+    // optional: preload a few rows when focusing the box
+    box.addEventListener('focus', async ()=>{
+      if(box.value.trim().length===0){
+        showResults(true);
+        hint.textContent = 'Showing recent contracts';
+        await search('');
+      }
+    });
+  })();
+  </script>
 </body>
 </html>

@@ -8,6 +8,12 @@ from model import TariffRate, db, Contract, Child, NonSchoolDay,SchoolTerm,Vehic
 from datetime import datetime
 from utils.utils import manager_required
 from utils.utils import get_distance_between_postcodes
+from flask import render_template, request, flash, redirect, url_for, jsonify, current_app, abort
+from sqlalchemy import or_, func
+from sqlalchemy.exc import IntegrityError, DataError
+from datetime import datetime, time
+from model import db, Contract, Child, TariffRate, Vehicle, MechanicJob, SchoolTerm, InsetDay
+from utils.utils import manager_required, get_distance_between_postcodes
 
 @manager_bp.route('/manage-tariffs', methods=['GET', 'POST'])
 def manage_tariffs():
@@ -21,30 +27,126 @@ def manage_tariffs():
 
     rates = TariffRate.query.order_by(TariffRate.vehicle_type, TariffRate.tariff).all()
     return render_template('manage_tariffs.html', rates=rates)
+from flask import request, jsonify
+from sqlalchemy import or_, func
+from datetime import time
+from model import db, Contract, Child
+
+def _try_parse_time(token: str):
+    t = token.strip().replace(".", ":")
+    if t.isdigit():
+        if len(t) <= 2:
+            return time(int(t), 0)
+        if len(t) == 4:
+            return time(int(t[:2]), int(t[2:]))
+    if ":" in t:
+        try:
+            h, m = t.split(":", 1)
+            return time(int(h), int(m))
+        except Exception:
+            return None
+    return None
+
+@manager_bp.route("/api/contracts/search")
+def api_contracts_search():
+    q = (request.args.get("q") or "").strip()
+    if not q:
+        rows = (db.session.query(Contract)
+                .order_by(Contract.contract_number)
+                .limit(25).all())
+    else:
+        tt = _try_parse_time(q)
+        like = f"%{q.lower()}%"
+
+        query = (db.session.query(Contract)
+                 .outerjoin(Child)
+                 .filter(or_(
+                     func.lower(Contract.contract_number).like(like),
+                     func.lower(Contract.school_name).like(like),
+                     func.lower(Child.name).like(like),
+                     *( [Contract.school_start_time == tt] if tt else [] ),
+                     *( [Contract.route_start_time == tt]  if tt else [] ),
+                     *( [Contract.route_finish_time == tt] if tt else [] ),
+                 ))
+                 .distinct()
+                 .order_by(Contract.contract_number))
+
+        rows = query.limit(100).all()
+
+    def _timefmt(t): return t.strftime("%H:%M") if t else None
+
+    payload = []
+    for c in rows:
+        payload.append({
+            "id": c.id,
+            "contract_number": c.contract_number,
+            "school_name": c.school_name,
+            "school_postcode": c.school_postcode,
+            "school_start_time": _timefmt(c.school_start_time),
+            "school_finish_time": _timefmt(c.school_finish_time),
+            "route_start_time": _timefmt(c.route_start_time),
+            "route_finish_time": _timefmt(c.route_finish_time),
+            "required_vehicle_size": c.required_vehicle_size,
+            "commute_time": c.commute_time,
+            "escort_required": bool(c.escort_required),
+            "children": [{"id": ch.id, "name": ch.name, "address": ch.address} for ch in c.children],
+        })
+    return jsonify({"results": payload})
+
+
+# ---------- helpers ----------
+def _parse_time(val: str):
+    """Accept '9', '09', '9:00', '09:00', '0900', '9.00' -> time(9,0). Empty -> None."""
+    if not val:
+        return None
+    v = val.strip().replace('.', ':')
+    if v.isdigit():
+        if len(v) <= 2:     return time(int(v), 0)
+        if len(v) == 4:     return time(int(v[:2]), int(v[2:]))
+    if ':' in v:
+        try:
+            h, m = v.split(':', 1)
+            return time(int(h), int(m))
+        except Exception:
+            return None
+    try:
+        return datetime.strptime(v, "%H:%M").time()
+    except Exception:
+        return None
+
+# ---------- LIST ----------
+@manager_bp.route('/contracts', methods=['GET'])
+@manager_required
+def view_contracts():
+    contracts = Contract.query.order_by(Contract.contract_number).all()
+    return render_template('contracts.html', contracts=contracts)
+
+# ---------- ADD ----------
 @manager_bp.route('/add-contract', methods=['GET', 'POST'])
 @manager_required
 def add_contract():
     if request.method == 'POST':
         try:
-            # 🔧 Get all form fields
-            contract_number = request.form['contract_number']
-            school_name = request.form['school_name']
-            school_postcode = request.form['school_postcode']
-            school_start_time = datetime.strptime(request.form['school_start_time'], '%H:%M').time()
-            school_finish_time = datetime.strptime(request.form['school_finish_time'], '%H:%M').time()
-            route_start_time = datetime.strptime(request.form['route_start_time'], '%H:%M').time()
-            route_finish_time = datetime.strptime(request.form['route_finish_time'], '%H:%M').time()
-            required_vehicle_size = request.form.get('required_vehicle_size')
-            commute_time = int(request.form.get('commute_time') or 0)
-            escort_required = True if request.form.get('escort_required') == 'on' else False
+            contract_number      = request.form['contract_number'].strip()
+            school_name          = request.form['school_name'].strip()
+            school_postcode      = (request.form.get('school_postcode') or '').strip() or None
+            school_start_time    = _parse_time(request.form.get('school_start_time'))
+            school_finish_time   = _parse_time(request.form.get('school_finish_time'))
+            route_start_time     = _parse_time(request.form.get('route_start_time'))
+            route_finish_time    = _parse_time(request.form.get('route_finish_time'))
+            required_vehicle_size= (request.form.get('required_vehicle_size') or '').strip() or None
+            commute_time         = int(request.form.get('commute_time') or 0)
+            escort_required      = bool(request.form.get('escort_required'))
 
-            # 🔒 Check for duplicate contract number
+            if not (school_start_time and school_finish_time):
+                flash('School start/finish times are required.', 'danger')
+                return redirect(url_for('manager.add_contract'))
+
             if Contract.query.filter_by(contract_number=contract_number).first():
                 flash('❌ Contract number already exists. Please choose another.', 'danger')
                 return redirect(url_for('manager.add_contract'))
 
-            # ✅ Create and save the contract
-            new_contract = Contract(
+            c = Contract(
                 contract_number=contract_number,
                 school_name=school_name,
                 school_postcode=school_postcode,
@@ -56,59 +158,124 @@ def add_contract():
                 commute_time=commute_time,
                 escort_required=escort_required
             )
+            db.session.add(c)
+            db.session.flush()  # get c.id
 
-            db.session.add(new_contract)
-            db.session.flush()  # So we can get new_contract.id for the children
-
-            # 👶 Handle children
-            child_names = request.form.getlist('child_name[]')
-            child_addresses = request.form.getlist('child_address[]')
-            child_postcodes = request.form.getlist('child_postcode[]')
-
-            for name, address, postcode in zip(child_names, child_addresses, child_postcodes):
-                if name.strip():
-                    child = Child(
-                        name=name,
-                        address=address,
-                        child_postcode=postcode,
-                        contract_id=new_contract.id
-                    )
-                    db.session.add(child)
+            # children
+            names     = request.form.getlist('child_name[]')
+            addresses = request.form.getlist('child_address[]')
+            postcodes = request.form.getlist('child_postcode[]')
+            for n, a, p in zip(names, addresses, postcodes):
+                n = (n or '').strip()
+                a = (a or '').strip()
+                p = (p or '').strip() or None
+                if n:
+                    db.session.add(Child(name=n, address=a, child_postcode=p, contract_id=c.id))
 
             db.session.commit()
             flash('✅ Contract added successfully!', 'success')
-            return redirect(url_for('view_contracts'))
+            return redirect(url_for('manager.view_contracts'))
 
         except Exception as e:
             db.session.rollback()
-            print("🚨 ERROR WHILE SAVING CONTRACT:", e)
+            current_app.logger.exception("Error adding contract")
             flash(f'❌ An error occurred: {e}', 'danger')
 
     return render_template('add_contract.html')
 
-
-@manager_bp.route('/edit-contract/<int:contract_id>', methods=['GET', 'POST'])
+# ---------- EDIT (GET) ----------
+@manager_bp.route('/contracts/<int:contract_id>/edit', methods=['GET'])
 @manager_required
 def edit_contract(contract_id):
-    contract = Contract.query.get_or_404(contract_id)
-    if request.method == 'POST':
-        contract.contract_number = request.form['contract_number']
-        contract.school_name = request.form['school_name']
-        contract.school_start_time = datetime.strptime(request.form['school_start_time'], '%H:%M').time()
-        contract.school_finish_time = datetime.strptime(request.form['school_finish_time'], '%H:%M').time()
-        db.session.commit()
-        flash('Contract updated successfully.', 'success')
-        return redirect(url_for('view_contracts'))
-    return render_template('edit_contract.html', contract=contract)
+    c = Contract.query.get_or_404(contract_id)
+    return render_template('edit_contract.html', contract=c)
 
-@manager_bp.route('/delete-contract/<int:contract_id>', methods=['POST'])
+# ---------- UPDATE (POST) ----------
+@manager_bp.route('/contracts/<int:contract_id>/update', methods=['POST'])
+@manager_required
+def update_contract(contract_id):
+    c = Contract.query.get_or_404(contract_id)
+    current_app.logger.info("Update contract %s form keys: %s", contract_id, list(request.form.keys()))
+
+    # Base fields
+    c.contract_number       = (request.form.get('contract_number') or c.contract_number).strip()
+    c.school_name           = (request.form.get('school_name') or c.school_name).strip()
+    c.school_postcode       = (request.form.get('school_postcode') or '').strip() or None
+    c.required_vehicle_size = (request.form.get('required_vehicle_size') or '').strip() or None
+
+    # Times (correct fields)
+    s_start  = _parse_time(request.form.get('school_start_time'))
+    s_finish = _parse_time(request.form.get('school_finish_time'))
+    r_start  = _parse_time(request.form.get('route_start_time'))
+    r_finish = _parse_time(request.form.get('route_finish_time'))
+
+    if s_start  is not None: c.school_start_time  = s_start
+    if s_finish is not None: c.school_finish_time = s_finish
+    c.route_start_time  = r_start     # can be None
+    c.route_finish_time = r_finish    # can be None
+
+    commute = request.form.get('commute_time')
+    c.commute_time = int(commute) if (commute and commute.isdigit()) else None
+    c.escort_required = bool(request.form.get('escort_required'))
+
+    # Children (update/add/remove)
+    ids       = request.form.getlist('child_id[]')       or request.form.getlist('child_id')
+    names     = request.form.getlist('child_name[]')     or request.form.getlist('child_name')
+    addresses = request.form.getlist('child_address[]')  or request.form.getlist('child_address')
+    postcodes = request.form.getlist('child_postcode[]') or request.form.getlist('child_postcode')
+
+    def _get(seq, i, default=""): return (seq[i] if i < len(seq) else default) or default
+
+    if ids:
+        current_by_id = {str(ch.id): ch for ch in c.children}
+        seen = set()
+        for i in range(max(len(names), len(ids))):
+            name = _get(names, i).strip()
+            addr = _get(addresses, i).strip()
+            pc   = (_get(postcodes, i).strip() or None)
+            cid  = _get(ids, i).strip()
+            if not (name or addr or pc):
+                continue
+            ch = current_by_id.get(cid)
+            if ch:
+                ch.name = name or ch.name
+                ch.address = addr or ch.address
+                ch.child_postcode = pc
+                seen.add(cid)
+            else:
+                db.session.add(Child(name=name, address=addr, child_postcode=pc, contract_id=c.id))
+        for cid, ch in current_by_id.items():
+            if cid not in seen:
+                db.session.delete(ch)
+    else:
+        for ch in list(c.children):
+            db.session.delete(ch)
+        for i in range(len(names)):
+            name = _get(names, i).strip()
+            if not name: continue
+            addr = _get(addresses, i).strip()
+            pc   = (_get(postcodes, i).strip() or None)
+            db.session.add(Child(name=name, address=addr, child_postcode=pc, contract_id=c.id))
+
+    try:
+        db.session.commit()
+        flash("✅ Contract updated.", "success")
+    except (IntegrityError, DataError):
+        db.session.rollback()
+        current_app.logger.exception("Contract update failed")
+        flash("❌ Could not save. Check required fields or duplicates.", "danger")
+
+    return redirect(url_for('manager.view_contracts'))
+
+# ---------- DELETE ----------
+@manager_bp.route('/contracts/<int:contract_id>/delete', methods=['POST'])
 @manager_required
 def delete_contract(contract_id):
     contract = Contract.query.get_or_404(contract_id)
     db.session.delete(contract)
     db.session.commit()
     flash('Contract deleted.', 'info')
-    return redirect(url_for('view_contracts'))
+    return redirect(url_for('manager.view_contracts'))
 
 @manager_bp.route('/manage-school-calendar', methods=['GET', 'POST'])
 @manager_required

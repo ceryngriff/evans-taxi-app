@@ -26,14 +26,16 @@
     .btn-danger { background:#ef4444; color:white; }
     hr { border:0; height:1px; background:#24424f; margin:22px 0; }
     small.hint { color:#9fb7c2; display:block; margin-top:4px; }
+    .inline { display:flex; align-items:center; gap:8px; margin-top:8px; }
   </style>
 </head>
 <body>
   <div class="container">
-    <a class="back" href="{{ url_for('view_contracts') }}">← Back to Contracts</a>
+    <a class="back" href="{{ url_for('manager.view_contracts') }}">← Back to Contracts</a>
     <h1>Edit Contract: {{ contract.contract_number }}</h1>
 
-    <form method="post" action="{{ url_for('update_contract', contract_id=contract.id) }}">
+    <!-- use your manager blueprint endpoint names -->
+    <form method="post" action="{{ url_for('manager.update_contract', contract_id=contract.id) }}">
       <!-- CONTRACT FIELDS -->
       <div class="card">
         <div class="grid-2">
@@ -51,19 +53,6 @@
 
         <div class="grid-2" style="margin-top:var(--gap);">
           <div>
-            <label for="pickup_time">School Start Time</label>
-            <input id="pickup_time" name="pickup_time" type="time" required
-                   value="{{ contract.route_start_time.strftime('%H:%M') if contract.route_start_time else '' }}">
-          </div>
-          <div>
-            <label for="school_time">School Finish Time</label>
-            <input id="school_time" name="school_time" type="time" required
-                   value="{{ contract.route_finish_time.strftime('%H:%M') if contract.route_finish_time else '' }}">
-          </div>
-        </div>
-
-        <div class="grid-2" style="margin-top:var(--gap);">
-          <div>
             <label for="school_postcode">School Postcode</label>
             <input id="school_postcode" name="school_postcode" type="text"
                    value="{{ contract.school_postcode or '' }}">
@@ -73,6 +62,47 @@
             <label for="required_vehicle_size">Required Vehicle Size</label>
             <input id="required_vehicle_size" name="required_vehicle_size" type="text"
                    value="{{ contract.required_vehicle_size or '' }}">
+          </div>
+        </div>
+
+        <!-- Correct mapping for SCHOOL times -->
+        <div class="grid-2" style="margin-top:var(--gap);">
+          <div>
+            <label for="school_start_time">School Start Time</label>
+            <input id="school_start_time" name="school_start_time" type="time" required
+                   value="{{ contract.school_start_time.strftime('%H:%M') if contract.school_start_time else '' }}">
+          </div>
+          <div>
+            <label for="school_finish_time">School Finish Time</label>
+            <input id="school_finish_time" name="school_finish_time" type="time" required
+                   value="{{ contract.school_finish_time.strftime('%H:%M') if contract.school_finish_time else '' }}">
+          </div>
+        </div>
+
+        <!-- Separate ROUTE times -->
+        <div class="grid-2" style="margin-top:var(--gap);">
+          <div>
+            <label for="route_start_time">Route Start Time</label>
+            <input id="route_start_time" name="route_start_time" type="time"
+                   value="{{ contract.route_start_time.strftime('%H:%M') if contract.route_start_time else '' }}">
+          </div>
+          <div>
+            <label for="route_finish_time">Route Finish Time</label>
+            <input id="route_finish_time" name="route_finish_time" type="time"
+                   value="{{ contract.route_finish_time.strftime('%H:%M') if contract.route_finish_time else '' }}">
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-top:var(--gap);">
+          <div>
+            <label for="commute_time">Commute Time (mins)</label>
+            <input id="commute_time" name="commute_time" type="number" min="0" step="1"
+                   value="{{ contract.commute_time if contract.commute_time is not none else '' }}">
+          </div>
+          <div class="inline">
+            <input id="escort_required" name="escort_required" type="checkbox" value="1"
+                   {% if contract.escort_required %}checked{% endif %}>
+            <label for="escort_required" style="margin:0;">Escort Required</label>
           </div>
         </div>
       </div>
@@ -114,7 +144,7 @@
 
       <div class="actions" style="margin-top:22px;">
         <button type="submit" class="btn btn-primary">Save Changes</button>
-        <a class="btn btn-ghost" href="{{ url_for('view_contracts') }}">Cancel</a>
+        <a class="btn btn-ghost" href="{{ url_for('manager.view_contracts') }}">Cancel</a>
       </div>
     </form>
   </div>
