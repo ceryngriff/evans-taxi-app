@@ -16,7 +16,6 @@
       --inset-day: rgba(100, 149, 237, 0.15);
       --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-
     * { box-sizing: border-box; }
 
     html, body {
@@ -46,15 +45,34 @@
       text-align: center;
       font-size: 3rem;
       color: var(--accent);
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
       text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 1.25rem;
+    }
+    .back-link, .manage-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      border: 1px solid rgba(0,255,255,0.35);
+      padding: 6px 10px;
+      border-radius: 10px;
+      transition: .2s;
+    }
+    .back-link:hover, .manage-link:hover {
+      color: #000; background: var(--accent);
     }
 
     .calendar-nav {
       text-align: center;
-      margin-bottom: 2rem;
+      margin-bottom: 1.25rem;
     }
-
     .calendar-nav a {
       color: var(--accent);
       margin: 0 1rem;
@@ -63,93 +81,57 @@
       font-size: 1.1rem;
       transition: 0.2s;
     }
-
-    .calendar-nav a:hover {
-      color: #fff;
-      text-shadow: 0 0 8px var(--accent);
-    }
+    .calendar-nav a:hover { color: #fff; text-shadow: 0 0 8px var(--accent); }
 
     table.calendar {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
+      width: 100%; border-collapse: collapse; table-layout: fixed;
     }
-
     .calendar th, .calendar td {
-      width: 14.28%;
-      padding: 1rem;
-      vertical-align: top;
-      text-align: left;
+      width: 14.28%; padding: 1rem; vertical-align: top; text-align: left;
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.03);
+      border-radius: 12px; background: rgba(255, 255, 255, 0.03);
       transition: background 0.3s ease;
     }
-
     .calendar th {
       background: rgba(255, 255, 255, 0.08);
-      color: var(--accent);
-      text-transform: uppercase;
-      font-size: 1rem;
+      color: var(--accent); text-transform: uppercase; font-size: 1rem;
     }
+    .calendar td:hover { background: var(--accent-soft); box-shadow: 0 0 10px rgba(0,255,255,0.2); transform: scale(1.02); }
 
-    .calendar td:hover {
-      background: var(--accent-soft);
-      box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
-      transform: scale(1.02);
-    }
-
-    .calendar-day a {
-      display: block;
-      text-decoration: none;
-      color: inherit;
-    }
-
-    .day-number {
-      font-size: 1.2rem;
-      font-weight: bold;
-      color: #fff;
-      margin-bottom: 0.3rem;
-    }
+    .calendar-day a { display: block; text-decoration: none; color: inherit; }
+    .day-number { font-size: 1.2rem; font-weight: bold; color: #fff; margin-bottom: 0.3rem; }
 
     .term-day { background-color: var(--school-day); }
     .inset-day { background-color: var(--inset-day); }
     .non-school-day { background-color: var(--non-school-day); }
     .leave-day { background-color: var(--leave-day); }
 
-    .emoji-label {
-      font-size: 0.85rem;
-      color: #ccc;
-      display: block;
-      margin-top: 0.3rem;
-    }
+    .emoji-label { font-size: 0.85rem; color: #ccc; display: block; margin-top: 0.3rem; }
+    .contract { background: var(--accent); color: #000; font-size: 0.85rem; padding: 2px 6px; border-radius: 6px; display: inline-block; margin-top: 4px; }
 
-    .contract {
-      background: var(--accent);
-      color: #000;
-      font-size: 0.85rem;
-      padding: 2px 6px;
-      border-radius: 6px;
+    .tiny-edit {
       display: inline-block;
-      margin-top: 4px;
+      font-size: 0.75rem;
+      margin-left: 6px;
+      color: var(--accent);
+      text-decoration: underline;
     }
 
     @media (max-width: 768px) {
-      .calendar th, .calendar td {
-        padding: 0.5rem;
-        font-size: 0.85rem;
-      }
-      .calendar-header {
-        font-size: 2rem;
-      }
+      .calendar th, .calendar td { padding: 0.5rem; font-size: 0.85rem; }
+      .calendar-header { font-size: 2rem; }
+      .topbar { flex-direction: column; align-items: stretch; }
     }
   </style>
-  <a href="{{ url_for('manager_dashboard') }}" class="back-link">← Return to Dashboard</a>
 </head>
 <body>
   <div class="calendar-container">
-    <div class="calendar-header">
-       {{ calendar_module.month_name[month] }} {{ year }}
+
+    <div class="topbar">
+      <a href="{{ url_for('manager_dashboard') }}" class="back-link">← Return to Dashboard</a>
+      <div class="calendar-header">{{ calendar_module.month_name[month] }} {{ year }}</div>
+      <!-- Manage terms button -->
+      <a href="{{ url_for('school_terms') }}" class="manage-link">Manage School Terms</a>
     </div>
 
     <div class="calendar-nav">
@@ -166,55 +148,68 @@
         </thead>
         <tbody>
           {% for week in calendar %}
-          <tr>
-            {% for day in week %}
-              {% if day == 0 %}
-                <td></td>
-              {% else %}
-                {% set date_obj = date(year, month, day) %}
-                {% set date_key = date_obj.strftime('%Y-%m-%d') %}
-                {% set cell_class = '' %}
-                {% if date_obj in non_school_days %}
-                  {% set cell_class = 'non-school-day' %}
-                {% elif date_obj in inset_dates %}
-                  {% set cell_class = 'inset-day' %}
-                {% elif date_obj in leave_dates %}
-                  {% set cell_class = 'leave-day' %}
-                {% elif date_obj in term_dates %}
-                  {% set cell_class = 'term-day' %}
-                {% endif %}
-                <td class="calendar-day {{ cell_class }}">
-                  <a href="{{ url_for('schedule_day', date_str=date_key) }}">
-                    <div class="day-number">{{ day }}</div>
+            <tr>
+              {% for day in week %}
+                {% if day == 0 %}
+                  <td></td>
+                {% else %}
+                  {% set date_obj = date(year, month, day) %}
+                  {% set date_key = date_obj.strftime('%Y-%m-%d') %}
+                  {% set cell_class = '' %}
+                  {% if date_obj in non_school_days %}
+                    {% set cell_class = 'non-school-day' %}
+                  {% elif date_obj in inset_dates %}
+                    {% set cell_class = 'inset-day' %}
+                  {% elif date_obj in leave_dates %}
+                    {% set cell_class = 'leave-day' %}
+                  {% elif date_obj in term_dates %}
+                    {% set cell_class = 'term-day' %}
+                  {% endif %}
 
-                    {% if date_obj in term_dates %}
-                      <span class="emoji-label">📘 School Day</span>
-                    {% endif %}
-                    {% if date_obj in inset_dates %}
-                      <span class="emoji-label">🚰 Inset Day</span>
-                      {% for entry in inset_entries if entry.date == date_obj %}
-                        <span class="emoji-label">🏫 {{ entry.school_name }}</span>
-                      {% endfor %}
-                    {% endif %}
-                    {% if date_obj in non_school_days %}
-                      <span class="emoji-label">⛔ Not in School</span>
-                    {% endif %}
-                    {% if date_obj in leave_dates %}
-                      <span class="emoji-label">🌴 Annual Leave</span>
-                      {% for name in leave_dates[date_obj] %}
-                        <span class="emoji-label">👤 {{ name }}</span>
-                      {% endfor %}
-                    {% endif %}
-                    {% if allocations_by_date and date_key in allocations_by_date %}
-                      {% for alloc in allocations_by_date[date_key] %}
-                        <span class="contract">🚌 {{ alloc.contract.contract_number }}</span>
-                      {% endfor %}
-                    {% endif %}
-                  </a>
-                </td>
-              {% endif %}
-            {% endfor %}
-          </tr>
+                  <td class="calendar-day {{ cell_class }}">
+                    <a href="{{ url_for('schedule_day', date_str=date_key) }}">
+                      <div class="day-number">{{ day }}</div>
+
+                      {% if date_obj in term_dates %}
+                        <span class="emoji-label">📘 School Day</span>
+                        {# show the term name(s) covering this date + inline Edit #}
+                        {% for t in school_terms %}
+                          {% if t.start_date <= date_obj <= t.end_date %}
+                            <span class="emoji-label">🏷️ {{ t.name }}
+                              <a class="tiny-edit" href="{{ url_for('edit_school_term', term_id=t.id) }}">Edit</a>
+                            </span>
+                          {% endif %}
+                        {% endfor %}
+                      {% endif %}
+
+                      {% if date_obj in inset_dates %}
+                        <span class="emoji-label">🚰 Inset Day</span>
+                        {% for entry in inset_entries if entry.date == date_obj %}
+                          <span class="emoji-label">🏫 {{ entry.school_name }}</span>
+                        {% endfor %}
+                      {% endif %}
+
+                      {% if date_obj in non_school_days %}
+                        <span class="emoji-label">⛔ Not in School</span>
+                      {% endif %}
+
+                      {% if date_obj in leave_dates %}
+                        <span class="emoji-label">🌴 Annual Leave</span>
+                        {% for name in leave_dates[date_obj] %}
+                          <span class="emoji-label">👤 {{ name }}</span>
+                        {% endfor %}
+                      {% endif %}
+
+                      {% if allocations_by_date and date_key in allocations_by_date %}
+                        {% for alloc in allocations_by_date[date_key] %}
+                          <span class="contract">🚌 {{ alloc.contract.contract_number }}</span>
+                        {% endfor %}
+                      {% endif %}
+                    </a>
+                  </td>
+                {% endif %}
+              {% endfor %}
+            </tr>
           {% endfor %}
         </tbody>
       </table>

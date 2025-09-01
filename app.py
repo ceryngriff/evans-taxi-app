@@ -1034,6 +1034,104 @@ def weekly_preview():
 
     return render_template('staff_weekly_preview.html', week_allocations=week_allocations)
 
+# ======== School Terms & Inset Days: CRUD ========
+
+@app.route('/manage-calendar', methods=['GET'])
+@manager_required
+def manage_calendar():
+    terms = SchoolTerm.query.order_by(SchoolTerm.start_date).all()
+    insets = InsetDay.query.order_by(InsetDay.date).all()
+    return render_template('manage_calendar.html', terms=terms, insets=insets)
+
+# ---- ADD ----
+@app.route('/terms/add', methods=['POST'])
+@manager_required
+def add_term():
+    name = (request.form.get('term_name') or '').strip()
+    s = request.form.get('term_start_date')
+    e = request.form.get('term_end_date')
+    if not (name and s and e):
+        flash('Please provide name, start and end dates.', 'danger')
+        return redirect(url_for('manage_calendar'))
+    s_date = datetime.strptime(s, '%Y-%m-%d').date()
+    e_date = datetime.strptime(e, '%Y-%m-%d').date()
+    if e_date < s_date:
+        flash('End date cannot be before start date.', 'danger')
+        return redirect(url_for('manage_calendar'))
+    db.session.add(SchoolTerm(name=name, start_date=s_date, end_date=e_date))
+    db.session.commit()
+    flash('Term added.', 'success')
+    return redirect(url_for('manage_calendar'))
+
+@app.route('/insets/add', methods=['POST'])
+@manager_required
+def add_inset():
+    school = (request.form.get('school_name') or '').strip()
+    d = request.form.get('inset_date')
+    reason = (request.form.get('reason') or '').strip() or None
+    if not (school and d):
+        flash('Please provide school name and date.', 'danger')
+        return redirect(url_for('manage_calendar'))
+    d_date = datetime.strptime(d, '%Y-%m-%d').date()
+    db.session.add(InsetDay(school_name=school, date=d_date, reason=reason))
+    db.session.commit()
+    flash('Inset day added.', 'success')
+    return redirect(url_for('manage_calendar'))
+
+# ---- UPDATE ----
+@app.route('/terms/<int:term_id>/update', methods=['POST'])
+@manager_required
+def update_term(term_id):
+    term = SchoolTerm.query.get_or_404(term_id)
+    name = (request.form.get('term_name') or term.name).strip()
+    s = request.form.get('term_start_date')
+    e = request.form.get('term_end_date')
+    s_date = datetime.strptime(s, '%Y-%m-%d').date() if s else term.start_date
+    e_date = datetime.strptime(e, '%Y-%m-%d').date() if e else term.end_date
+    if e_date < s_date:
+        flash('End date cannot be before start date.', 'danger')
+        return redirect(url_for('manage_calendar'))
+    term.name = name
+    term.start_date = s_date
+    term.end_date = e_date
+    db.session.commit()
+    flash('Term updated.', 'success')
+    return redirect(url_for('manage_calendar'))
+
+@app.route('/insets/<int:inset_id>/update', methods=['POST'])
+@manager_required
+def update_inset(inset_id):
+    inset = InsetDay.query.get_or_404(inset_id)
+    school = (request.form.get('school_name') or inset.school_name).strip()
+    d = request.form.get('inset_date')
+    reason = request.form.get('reason')
+    inset.school_name = school
+    inset.date = datetime.strptime(d, '%Y-%m-%d').date() if d else inset.date
+    inset.reason = (reason or '').strip() or None
+    db.session.commit()
+    flash('Inset day updated.', 'success')
+    return redirect(url_for('manage_calendar'))
+
+# ---- DELETE ----
+@app.route('/terms/<int:term_id>/delete', methods=['POST'])
+@manager_required
+def delete_term(term_id):
+    term = SchoolTerm.query.get_or_404(term_id)
+    db.session.delete(term)
+    db.session.commit()
+    flash('Term deleted.', 'success')
+    return redirect(url_for('manage_calendar'))
+
+@app.route('/insets/<int:inset_id>/delete', methods=['POST'])
+@manager_required
+def delete_inset(inset_id):
+    inset = InsetDay.query.get_or_404(inset_id)
+    db.session.delete(inset)
+    db.session.commit()
+    flash('Inset day deleted.', 'success')
+    return redirect(url_for('manage_calendar'))
+
+
 @app.route('/submit-leave-request', methods=['POST'])
 @login_required
 def submit_leave_request():
@@ -1057,6 +1155,7 @@ def submit_leave_request():
 
     flash('Leave request submitted successfully.', 'success')
     return redirect(url_for('staff_dashboard'))
+
 @app.route('/submit-feedback', methods=['POST'])
 @login_required
 def submit_feedback():
