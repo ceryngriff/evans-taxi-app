@@ -23,8 +23,11 @@ from geopy.geocoders import Nominatim
 import time
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError, DataError
+from utils.billing_utils import calculate_school_days_for_month
 
 app = Flask(__name__, instance_relative_config=True)
+
+app.jinja_env.globals.update(enumerate=enumerate)
 
 # Read DB URL from the environment (Render’s DATABASE_URL).
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///school_bus.db")
@@ -885,6 +888,32 @@ def calendar_view():
         school_terms=terms,
         date=date,
         calendar_module=calendar
+    )
+from datetime import date
+import calendar
+from utils.billing_utils import calculate_school_days_for_month
+
+@app.route("/billing-days")
+def billing_days_view():
+    today = date.today()
+    year = int(request.args.get("year", today.year))
+    month = int(request.args.get("month", today.month))
+
+    data = calculate_school_days_for_month(year, month)  # dict {school_name: days}
+    rows = sorted(
+        [{"school_name": k, "days": v} for k, v in data.items()],
+        key=lambda r: r["school_name"].lower()
+    )
+    total = sum(r["days"] for r in rows)
+    month_label = f"{calendar.month_name[month]} {year}"
+
+    return render_template(
+        "billing_days.html",
+        rows=rows,
+        year=year,
+        month=month,
+        month_label=month_label,
+        month_names=list(calendar.month_name)[1:],  # ["January", ... "December"]
     )
 
 @app.route('/staff-dashboard')

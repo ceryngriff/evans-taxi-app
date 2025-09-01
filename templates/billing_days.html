@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Billable School Days – {{ month_label }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --orange:#f97316; --black:#111827; --grey:#6b7280;
+      --bg:#f8fafc; --card:#fff; --border:#e5e7eb;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;background:var(--bg);color:var(--black)}
+    .wrap{max-width:960px;margin:32px auto;padding:0 16px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 4px 20px rgb(0 0 0 / 6%)}
+    header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+    h1{font-size:20px;margin:0}
+    .badge{display:inline-block;background:var(--black);color:#fff;border-radius:999px;padding:4px 10px;font-size:12px;margin-left:8px}
+    form{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    label{font-size:13px;color:var(--grey)}
+    select,button{border:1px solid var(--border);padding:10px 12px;border-radius:10px;background:#fff;font-size:14px}
+    button{background:var(--orange);border-color:var(--orange);color:#fff;font-weight:600;cursor:pointer}
+    button:hover{filter:brightness(0.98)}
+    .table-wrap{overflow:auto}
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    thead th{position:sticky;top:0;background:#fff;border-bottom:2px solid var(--border);text-align:left;font-size:13px;color:var(--grey);padding:12px}
+    tbody td{padding:14px 12px;border-bottom:1px solid var(--border);font-size:15px}
+    tbody tr:hover{background:#fafafa}
+    .right{text-align:right}
+    .total{font-weight:700}
+    .sub{color:var(--grey);font-size:13px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <header>
+        <h1>Billable School Days <span class="badge">{{ month_label }}</span></h1>
+
+        <form method="get" action="">
+          <label for="month">Month</label>
+          <select id="month" name="month" aria-label="Select month">
+            {# month_names is ["January", ..., "December"]; loop.index runs 1..12 #}
+            {% for name in month_names %}
+              <option value="{{ loop.index }}" {% if loop.index == month %}selected{% endif %}>
+                {{ name }}
+              </option>
+            {% endfor %}
+          </select>
+
+          <label for="year">Year</label>
+          <select id="year" name="year" aria-label="Select year">
+            {% for y in range(year-2, year+3) %}
+              <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+          </select>
+
+          <button type="submit">Update</button>
+        </form>
+      </header>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:70%">School</th>
+              <th class="right" style="width:30%">Billable Weekdays</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if rows and rows|length > 0 %}
+              {% for r in rows %}
+                <tr>
+                  <td>{{ r.school_name }}</td>
+                  <td class="right">{{ r.days }}</td>
+                </tr>
+              {% endfor %}
+              <tr>
+                <td class="total">Total (all schools)</td>
+                <td class="right total">{{ rows|map(attribute='days')|sum }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="2" class="sub">No schools found for this month.</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="padding:16px 24px">
+        <p class="sub">Counts include Monday–Friday on term dates, excluding NonSchoolDay and InsetDay entries.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
