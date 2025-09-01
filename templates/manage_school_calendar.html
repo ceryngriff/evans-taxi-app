@@ -4,52 +4,7 @@
   <meta charset="UTF-8" />
   <title>Manage School Calendar</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <style>
-    :root {
-      --border:#e5e7eb;
-      --muted:#6b7280;
-      --danger:#b91c1c;
-      --ok:#065f46;
-      --bg:#fafafa;
-    }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; }
-    .page { max-width:1000px; margin: 24px auto; padding: 0 16px; }
-    .back-link { display:inline-block; margin-bottom: 8px; text-decoration:none; }
-    h2 { margin: 8px 0 16px; }
-    .grid { display:grid; grid-template-columns: 1fr; gap:16px; }
-    @media (min-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } }
-
-    .card { background:#fff; border:1px solid var(--border); border-radius:12px; padding:16px; }
-    .card h3 { margin-top:0; }
-
-    form .row { display:grid; grid-template-columns: 1fr; gap:10px; }
-    form label { font-size: 0.9rem; color: var(--muted); display:block; }
-    form input[type="text"],
-    form input[type="date"],
-    form textarea,
-    form select {
-      width: 100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:#fff;
-    }
-    .actions { display:flex; gap:8px; align-items:center; flex-wrap: wrap; }
-    .btn { border:1px solid var(--border); background:#fff; padding:8px 10px; border-radius:8px; cursor:pointer; }
-    .btn.primary { background:#111827; color:#fff; border-color:#111827; }
-    .btn.ghost { background:#fff; }
-    .btn.danger { border-color: var(--danger); color: var(--danger); }
-    .muted { color: var(--muted); font-size: .9rem; }
-
-    table { width:100%; border-collapse: collapse; }
-    th, td { border-top:1px solid var(--border); padding:10px; vertical-align: top; }
-    thead th { border-top:none; text-align:left; background: var(--bg); }
-    tbody tr:hover { background:#fcfcfc; }
-
-    /* Inline edit forms inside table rows */
-    .inline-form { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-    .inline-form input[type="text"],
-    .inline-form input[type="date"],
-    .inline-form textarea { padding:6px 8px; border-radius:6px; }
-
-    .tables { margin-top: 16px; display:grid; gap:24px; }
-  </style>
+  
 </head>
 <body>
   <div class="page">
@@ -69,14 +24,16 @@
 
     <!-- Add forms -->
     <div class="grid">
+      <!-- Add Term -->
       <div class="card">
         <h3>Add School Term</h3>
-        <form method="POST" action="{{ url_for('add_term') }}">
-          {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+        <!-- POST back to the SAME page; named submit tells the view which action -->
+        <form method="POST" action="{{ url_for('manager.manage_school_calendar') }}">
+          {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
           <div class="row">
             <div>
               <label for="term_name">Term Name</label>
-              <input type="text" id="term_name" name="term_name" placeholder="e.g., Spring Term 2025" required>
+              <input type="text" id="term_name" name="term_name" placeholder="e.g., Spring Term 2026" required>
             </div>
             <div>
               <label for="term_start_date">Start Date</label>
@@ -88,16 +45,18 @@
             </div>
           </div>
           <div class="actions" style="margin-top:10px">
-            <button class="btn primary" type="submit">➕ Add Term</button>
+            <button class="btn primary" type="submit" name="add_term" value="1">➕ Add Term</button>
             <span class="muted">End date must be on/after start date.</span>
           </div>
         </form>
       </div>
 
+      <!-- Add Inset Day -->
       <div class="card">
         <h3>Add Inset Day</h3>
-        <form method="POST" action="{{ url_for('add_inset') }}">
-          {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+        <!-- POST back to the SAME page; named submit tells the view which action -->
+        <form method="POST" action="{{ url_for('manager.manage_school_calendar') }}">
+          {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
           <div class="row">
             <div>
               <label for="school_name">School Name</label>
@@ -113,7 +72,7 @@
             </div>
           </div>
           <div class="actions" style="margin-top:10px">
-            <button class="btn primary" type="submit">➕ Add Inset Day</button>
+            <button class="btn primary" type="submit" name="add_inset" value="1">➕ Add Inset Day</button>
           </div>
         </form>
       </div>
@@ -121,8 +80,7 @@
 
     <!-- Tables -->
     <div class="tables">
-
-      <!-- Terms table -->
+      <!-- Terms -->
       <div class="card">
         <h3>📘 Current Terms</h3>
         {% if terms and terms|length > 0 %}
@@ -140,23 +98,23 @@
             {% for t in terms %}
               <tr>
                 <td><strong>{{ t.name }}</strong></td>
-                <td>{{ t.start_date }}</td>
-                <td>{{ t.end_date }}</td>
+                <td>{{ t.start_date.strftime('%Y-%m-%d') if t.start_date }}</td>
+                <td>{{ t.end_date.strftime('%Y-%m-%d') if t.end_date }}</td>
                 <td class="muted">{{ t.id }}</td>
                 <td>
-                  <!-- Inline edit -->
-                  <form class="inline-form" method="POST" action="{{ url_for('update_term', term_id=t.id) }}">
-                    {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+                  <!-- Update Term -->
+                  <form class="inline-form" method="POST" action="{{ url_for('manager.update_term', term_id=t.id) }}">
+                    {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
                     <input type="text" name="term_name" value="{{ t.name }}" required>
-                    <input type="date" name="term_start_date" value="{{ t.start_date }}">
-                    <input type="date" name="term_end_date" value="{{ t.end_date }}">
+                    <input type="date" name="term_start_date" value="{{ t.start_date.strftime('%Y-%m-%d') if t.start_date }}">
+                    <input type="date" name="term_end_date"   value="{{ t.end_date.strftime('%Y-%m-%d') if t.end_date }}">
                     <button class="btn" type="submit" title="Save updates">💾 Update</button>
                   </form>
 
-                  <!-- Delete -->
-                  <form class="inline-form" method="POST" action="{{ url_for('delete_term', term_id=t.id) }}"
+                  <!-- Delete Term -->
+                  <form class="inline-form" method="POST" action="{{ url_for('manager.delete_term', term_id=t.id) }}"
                         onsubmit="return confirm('Delete this term? This cannot be undone.');">
-                    {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+                    {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
                     <button class="btn danger" type="submit" title="Delete term">🗑️ Delete</button>
                   </form>
                 </td>
@@ -169,7 +127,7 @@
         {% endif %}
       </div>
 
-      <!-- Insets table -->
+      <!-- Inset Days -->
       <div class="card">
         <h3>📕 Inset Days (Per School)</h3>
         {% if insets and insets|length > 0 %}
@@ -186,24 +144,24 @@
             <tbody>
             {% for d in insets %}
               <tr>
-                <td>{{ d.date }}</td>
+                <td>{{ d.date.strftime('%Y-%m-%d') if d.date }}</td>
                 <td><strong>{{ d.school_name }}</strong></td>
                 <td>{{ d.reason or '—' }}</td>
                 <td class="muted">{{ d.id }}</td>
                 <td>
-                  <!-- Inline edit -->
-                  <form class="inline-form" method="POST" action="{{ url_for('update_inset', inset_id=d.id) }}">
-                    {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+                  <!-- Update Inset -->
+                  <form class="inline-form" method="POST" action="{{ url_for('manager.update_inset', inset_id=d.id) }}">
+                    {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
                     <input type="text" name="school_name" value="{{ d.school_name }}" required>
-                    <input type="date" name="inset_date" value="{{ d.date }}">
+                    <input type="date" name="inset_date" value="{{ d.date.strftime('%Y-%m-%d') if d.date }}">
                     <input type="text" name="reason" value="{{ d.reason or '' }}" placeholder="Reason">
                     <button class="btn" type="submit" title="Save updates">💾 Update</button>
                   </form>
 
-                  <!-- Delete -->
-                  <form class="inline-form" method="POST" action="{{ url_for('delete_inset', inset_id=d.id) }}"
+                  <!-- Delete Inset -->
+                  <form class="inline-form" method="POST" action="{{ url_for('manager.delete_inset', inset_id=d.id) }}"
                         onsubmit="return confirm('Delete this inset day?');">
-                    {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+                    {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
                     <button class="btn danger" type="submit" title="Delete inset">🗑️ Delete</button>
                   </form>
                 </td>

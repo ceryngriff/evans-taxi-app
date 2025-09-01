@@ -157,8 +157,61 @@ def manage_school_calendar():
 @manager_bp.route('/view-inset-days/<school_name>', methods=['GET'])
 @manager_required
 def view_inset_days(school_name):
-    inset_days = NonSchoolDay.query.filter_by(school_name=school_name).all()
+    inset_days = InsetDay.query.filter_by(school_name=school_name).all()
     return render_template('view_inset_days.html', inset_days=inset_days)
+
+@manager_bp.route('/terms/<int:term_id>/update', methods=['POST'])
+@manager_required
+def update_term(term_id):
+    term = SchoolTerm.query.get_or_404(term_id)
+    name = (request.form.get('term_name') or term.name).strip()
+    s = request.form.get('term_start_date')
+    e = request.form.get('term_end_date')
+    s_date = datetime.strptime(s, '%Y-%m-%d').date() if s else term.start_date
+    e_date = datetime.strptime(e, '%Y-%m-%d').date() if e else term.end_date
+    if e_date < s_date:
+        flash('End date cannot be before start date.', 'danger')
+        return redirect(url_for('manager.manage_school_calendar'))
+
+    term.name = name
+    term.start_date = s_date
+    term.end_date = e_date
+    db.session.commit()
+    flash('Term updated.', 'success')
+    return redirect(url_for('manager.manage_school_calendar'))
+
+@manager_bp.route('/insets/<int:inset_id>/update', methods=['POST'])
+@manager_required
+def update_inset(inset_id):
+    inset = InsetDay.query.get_or_404(inset_id)
+    school = (request.form.get('school_name') or inset.school_name).strip()
+    d = request.form.get('inset_date')
+    reason = request.form.get('reason')
+    inset.school_name = school
+    inset.date = datetime.strptime(d, '%Y-%m-%d').date() if d else inset.date
+    inset.reason = (reason or '').strip() or None
+    db.session.commit()
+    flash('Inset day updated.', 'success')
+    return redirect(url_for('manager.manage_school_calendar'))
+
+# ---- DELETE ----
+@manager_bp.route('/terms/<int:term_id>/delete', methods=['POST'])
+@manager_required
+def delete_term(term_id):
+    term = SchoolTerm.query.get_or_404(term_id)
+    db.session.delete(term)
+    db.session.commit()
+    flash('Term deleted.', 'success')
+    return redirect(url_for('manager.manage_school_calendar'))
+
+@manager_bp.route('/insets/<int:inset_id>/delete', methods=['POST'])
+@manager_required
+def delete_inset(inset_id):
+    inset = InsetDay.query.get_or_404(inset_id)
+    db.session.delete(inset)
+    db.session.commit()
+    flash('Inset day deleted.', 'success')
+    return redirect(url_for('manager.manage_school_calendar'))
 
 @manager_bp.route('/scheduler')
 def scheduler():

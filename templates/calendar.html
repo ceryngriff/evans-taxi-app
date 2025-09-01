@@ -131,7 +131,7 @@
       <a href="{{ url_for('manager_dashboard') }}" class="back-link">← Return to Dashboard</a>
       <div class="calendar-header">{{ calendar_module.month_name[month] }} {{ year }}</div>
       <!-- Manage terms button -->
-      <a href="{{ url_for('school_terms') }}" class="manage-link">Manage School Terms</a>
+      <a href="{{ url_for('manager.manage_school_calendar') }}" class="manage-link">Manage School Terms</a>
     </div>
 
     <div class="calendar-nav">
@@ -172,12 +172,9 @@
 
                       {% if date_obj in term_dates %}
                         <span class="emoji-label">📘 School Day</span>
-                        {# show the term name(s) covering this date + inline Edit #}
                         {% for t in school_terms %}
                           {% if t.start_date <= date_obj <= t.end_date %}
-                            <span class="emoji-label">🏷️ {{ t.name }}
-                              <a class="tiny-edit" href="{{ url_for('edit_school_term', term_id=t.id) }}">Edit</a>
-                            </span>
+                            <span class="emoji-label">🏷️ {{ t.name }}</span>
                           {% endif %}
                         {% endfor %}
                       {% endif %}
@@ -202,10 +199,17 @@
 
                       {% if allocations_by_date and date_key in allocations_by_date %}
                         {% for alloc in allocations_by_date[date_key] %}
-                          <span class="contract">🚌 {{ alloc.contract.contract_number }}</span>
+                          <span class="contract">🚌 {{ alloc.contract.contract_number if alloc.contract else alloc.contract_number }}</span>
                         {% endfor %}
                       {% endif %}
                     </a>
+
+                    {# Tiny edit link OUTSIDE the big link #}
+                    {% for t in school_terms %}
+                      {% if t.start_date <= date_obj <= t.end_date %}
+                        <a class="tiny-edit" href="{{ url_for('manager.manage_school_calendar') }}#term-{{ t.id }}">Edit term</a>
+                      {% endif %}
+                    {% endfor %}
                   </td>
                 {% endif %}
               {% endfor %}

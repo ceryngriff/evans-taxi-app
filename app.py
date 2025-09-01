@@ -22,7 +22,7 @@ from geopy.distance import geodesic
 from geopy.geocoders import Nominatim
 import time
 from sqlalchemy import text
-from sqlalchemy.exc import IntegrityError, DataError 
+from sqlalchemy.exc import IntegrityError, DataError
 
 app = Flask(__name__, instance_relative_config=True)
 
@@ -785,20 +785,17 @@ def search_schedule_redirect():
     else:
         flash("Please select a date.", "warning")
         return redirect(url_for('calendar_view'))
+
 @app.route('/calendar')
 @manager_required
 def calendar_view():
-    from datetime import datetime, timedelta, date
-    from calendar import monthcalendar, day_name
-
     # Get the current month and year
-    year = request.args.get('year', default=None, type=int)
-    month = request.args.get('month', default=None, type=int)
+    year = request.args.get('year', type=int)
+    month = request.args.get('month', type=int)
 
     now = datetime.now()
-    if year is None or month is None:
-        year = now.year
-        month = now.month
+    if not year or not month:
+        year, month = now.year, now.month
 
     # Adjust month/year if out of range
     if month < 1:
@@ -810,76 +807,69 @@ def calendar_view():
 
     cal = monthcalendar(year, month)
 
-    # 1. Get all allocations (dated + repeat weekly)
-    allocations = DriverAllocation.query.all()
+    # 1) Allocations (one-off + repeating)
     allocations_by_date = {}
+    allocations = DriverAllocation.query.all()
 
     for alloc in allocations:
         if alloc.contract_date:
-            if alloc.contract_date.month == month and alloc.contract_date.year == year:
+            if alloc.contract_date.year == year and alloc.contract_date.month == month:
                 key = alloc.contract_date.strftime('%Y-%m-%d')
                 allocations_by_date.setdefault(key, []).append(alloc)
-        elif alloc.repeat_all_week:
+        elif alloc.repeat_all_week and alloc.contract_days:
+            wanted_days = {d.strip() for d in alloc.contract_days.split(',')}
             for week in cal:
-                for i, day in enumerate(week):  # i = 0 (Mon) to 6 (Sun)
-                    if day == 0:
+                for i, d in enumerate(week):  # i: 0..6 (Mon..Sun), d: day num or 0
+                    if d == 0:
                         continue
-                    day_date = date(year, month, day)
-                    weekday_name = calendar.day_name[i]
-                    if weekday_name in alloc.contract_days.split(','):
+                    if calendar.day_name[i] in wanted_days:
+                        day_date = date(year, month, d)
                         key = day_date.strftime('%Y-%m-%d')
                         allocations_by_date.setdefault(key, []).append(alloc)
 
-    # 2. Get school terms
+    # 2) School terms -> mark ONLY weekdays as school days
     terms = SchoolTerm.query.all()
     term_dates = set()
     for term in terms:
-        current = term.start_date
-        while current <= term.end_date:
-            if current.month == month and current.year == year:
-                term_dates.add(current)
-            current += timedelta(days=1)
+        cur = term.start_date
+        while cur <= term.end_date:
+            if cur.year == year and cur.month == month and cur.weekday() < 5:  # Mon–Fri
+                term_dates.add(cur)
+            cur += timedelta(days=1)
 
-    # 3. Get inset days from the new InsetDay model
+    # 3) Inset days for this month
     inset_entries = InsetDay.query.filter(
         db.extract('year', InsetDay.date) == year,
         db.extract('month', InsetDay.date) == month
     ).all()
-    inset_dates = {entry.date for entry in inset_entries}
+    inset_dates = {e.date for e in inset_entries}
 
-    # 4. Detect non-school days (weekends and out-of-term)
-    all_visible_days = [
-        date(year, month, day)
-        for week in cal
-        for day in week if day != 0
-    ]
+    # 4) Non-school = weekend OR (not in term) — but don’t mark inset as non-school here
+    all_visible_days = [date(year, month, d) for week in cal for d in week if d != 0]
+    non_school_days = {
+        d for d in all_visible_days
+        if d.weekday() >= 5 or (d not in term_dates and d not in inset_dates)
+    }
 
-    non_school_days = set()
-    for d in all_visible_days:
-        if d.weekday() >= 5:  # Saturday = 5, Sunday = 6
-            non_school_days.add(d)
-        elif d not in term_dates:
-            non_school_days.add(d)
-
-   # Fetch approved leaves and build a dict mapping each date to names
-    approved_leaves = Leave.query.filter_by(approved=True).all()
+    # 5) Approved leave mapped per day
     leave_dates = {}
+    approved_leaves = Leave.query.filter_by(approved=True).all()
     for leave in approved_leaves:
-         if leave.start_date and leave.end_date:
-          for i in range((leave.end_date - leave.start_date).days + 1):
-            leave_date = leave.start_date + timedelta(days=i)
-            if leave_date.month == month and leave_date.year == year:
-                name = None
-                if leave.person_type == "driver":
-                    driver = Driver.query.get(leave.person_id)
-                    name = driver.name if driver else None
-                elif leave.person_type == "escort":
-                    escort = Escort.query.get(leave.person_id)
-                    name = escort.name if escort else None
-
-                if name:
-                    leave_dates.setdefault(leave_date, []).append(name)
-
+        if not (leave.start_date and leave.end_date):
+            continue
+        cur = leave.start_date
+        while cur <= leave.end_date:
+            if cur.year == year and cur.month == month:
+                person_name = None
+                if leave.person_type == 'driver':
+                    p = Driver.query.get(leave.person_id)
+                    person_name = p.name if p else None
+                elif leave.person_type == 'escort':
+                    p = Escort.query.get(leave.person_id)
+                    person_name = p.name if p else None
+                if person_name:
+                    leave_dates.setdefault(cur, []).append(person_name)
+            cur += timedelta(days=1)
 
     return render_template(
         'calendar.html',
@@ -891,7 +881,7 @@ def calendar_view():
         inset_dates=inset_dates,
         inset_entries=inset_entries,
         non_school_days=non_school_days,
-        leave_dates=leave_dates, 
+        leave_dates=leave_dates,
         school_terms=terms,
         date=date,
         calendar_module=calendar
@@ -1041,97 +1031,8 @@ def weekly_preview():
 def manage_calendar():
     terms = SchoolTerm.query.order_by(SchoolTerm.start_date).all()
     insets = InsetDay.query.order_by(InsetDay.date).all()
-    return render_template('manage_calendar.html', terms=terms, insets=insets)
-
-# ---- ADD ----
-@app.route('/terms/add', methods=['POST'])
-@manager_required
-def add_term():
-    name = (request.form.get('term_name') or '').strip()
-    s = request.form.get('term_start_date')
-    e = request.form.get('term_end_date')
-    if not (name and s and e):
-        flash('Please provide name, start and end dates.', 'danger')
-        return redirect(url_for('manage_calendar'))
-    s_date = datetime.strptime(s, '%Y-%m-%d').date()
-    e_date = datetime.strptime(e, '%Y-%m-%d').date()
-    if e_date < s_date:
-        flash('End date cannot be before start date.', 'danger')
-        return redirect(url_for('manage_calendar'))
-    db.session.add(SchoolTerm(name=name, start_date=s_date, end_date=e_date))
-    db.session.commit()
-    flash('Term added.', 'success')
-    return redirect(url_for('manage_calendar'))
-
-@app.route('/insets/add', methods=['POST'])
-@manager_required
-def add_inset():
-    school = (request.form.get('school_name') or '').strip()
-    d = request.form.get('inset_date')
-    reason = (request.form.get('reason') or '').strip() or None
-    if not (school and d):
-        flash('Please provide school name and date.', 'danger')
-        return redirect(url_for('manage_calendar'))
-    d_date = datetime.strptime(d, '%Y-%m-%d').date()
-    db.session.add(InsetDay(school_name=school, date=d_date, reason=reason))
-    db.session.commit()
-    flash('Inset day added.', 'success')
-    return redirect(url_for('manage_calendar'))
-
-# ---- UPDATE ----
-@app.route('/terms/<int:term_id>/update', methods=['POST'])
-@manager_required
-def update_term(term_id):
-    term = SchoolTerm.query.get_or_404(term_id)
-    name = (request.form.get('term_name') or term.name).strip()
-    s = request.form.get('term_start_date')
-    e = request.form.get('term_end_date')
-    s_date = datetime.strptime(s, '%Y-%m-%d').date() if s else term.start_date
-    e_date = datetime.strptime(e, '%Y-%m-%d').date() if e else term.end_date
-    if e_date < s_date:
-        flash('End date cannot be before start date.', 'danger')
-        return redirect(url_for('manage_calendar'))
-    term.name = name
-    term.start_date = s_date
-    term.end_date = e_date
-    db.session.commit()
-    flash('Term updated.', 'success')
-    return redirect(url_for('manage_calendar'))
-
-@app.route('/insets/<int:inset_id>/update', methods=['POST'])
-@manager_required
-def update_inset(inset_id):
-    inset = InsetDay.query.get_or_404(inset_id)
-    school = (request.form.get('school_name') or inset.school_name).strip()
-    d = request.form.get('inset_date')
-    reason = request.form.get('reason')
-    inset.school_name = school
-    inset.date = datetime.strptime(d, '%Y-%m-%d').date() if d else inset.date
-    inset.reason = (reason or '').strip() or None
-    db.session.commit()
-    flash('Inset day updated.', 'success')
-    return redirect(url_for('manage_calendar'))
-
-# ---- DELETE ----
-@app.route('/terms/<int:term_id>/delete', methods=['POST'])
-@manager_required
-def delete_term(term_id):
-    term = SchoolTerm.query.get_or_404(term_id)
-    db.session.delete(term)
-    db.session.commit()
-    flash('Term deleted.', 'success')
-    return redirect(url_for('manage_calendar'))
-
-@app.route('/insets/<int:inset_id>/delete', methods=['POST'])
-@manager_required
-def delete_inset(inset_id):
-    inset = InsetDay.query.get_or_404(inset_id)
-    db.session.delete(inset)
-    db.session.commit()
-    flash('Inset day deleted.', 'success')
-    return redirect(url_for('manage_calendar'))
-
-
+    return render_template('manage_school_calendar.html', terms=terms, insets=insets)
+ 
 @app.route('/submit-leave-request', methods=['POST'])
 @login_required
 def submit_leave_request():
