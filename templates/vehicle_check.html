@@ -2,7 +2,28 @@
 {% block content %}
 <div class="container mt-4">
   <h2>Daily Vehicle Check</h2>
+
+  <!-- Driver responsibility notice -->
+  <div class="alert alert-warning mt-3" role="alert">
+    <strong>Driver Responsibility</strong><br>
+    You are legally and contractually responsible for ensuring your vehicle is roadworthy at the start of your shift.
+    This checklist is a formal record of your inspection.
+    <ul class="mb-0 mt-2">
+      <li>Do <strong>not</strong> drive the vehicle if any critical item fails.</li>
+      <li>Report defects immediately to the manager/mechanic and await instruction.</li>
+      <li>Knowingly operating an unroadworthy vehicle may result in personal liability, disciplinary action, and invalid insurance.</li>
+    </ul>
+  </div>
+
   <form method="POST" class="mt-3">
+    <!-- Acknowledge responsibility (required) -->
+    <div class="form-check mb-3">
+      <input type="checkbox" class="form-check-input" id="acknowledge_responsibility" name="acknowledge_responsibility" required>
+      <label class="form-check-label" for="acknowledge_responsibility">
+        I have inspected the vehicle and understand I am responsible for its roadworthiness.
+      </label>
+    </div>
+
     <div class="form-group">
       <label>Vehicle</label>
       <select name="vehicle_id" class="form-control" required>
@@ -18,23 +39,23 @@
     </div>
 
     <div class="form-check">
-      <input type="checkbox" class="form-check-input" name="lights_ok" checked>
-      <label class="form-check-label">Lights OK</label>
+      <input type="checkbox" class="form-check-input" name="lights_ok" id="lights_ok" checked>
+      <label class="form-check-label" for="lights_ok">Lights OK</label>
     </div>
 
     <div class="form-check">
-      <input type="checkbox" class="form-check-input" name="tires_ok" checked>
-      <label class="form-check-label">Tires OK</label>
+      <input type="checkbox" class="form-check-input" name="tires_ok" id="tires_ok" checked>
+      <label class="form-check-label" for="tires_ok">Tires OK</label>
     </div>
 
     <div class="form-check">
-      <input type="checkbox" class="form-check-input" name="oil_level_ok" checked>
-      <label class="form-check-label">Oil Level OK</label>
+      <input type="checkbox" class="form-check-input" name="oil_level_ok" id="oil_level_ok" checked>
+      <label class="form-check-label" for="oil_level_ok">Oil Level OK</label>
     </div>
 
     <div class="form-check">
-      <input type="checkbox" class="form-check-input" name="water_check" checked>
-      <label class="form-check-label">Water Level OK</label>
+      <input type="checkbox" class="form-check-input" name="water_check" id="water_check" checked>
+      <label class="form-check-label" for="water_check">Water Level OK</label>
     </div>
 
     <div class="form-group mt-2">
@@ -44,10 +65,10 @@
 
     <div class="form-group mt-2">
       <label>Notes</label>
-      <textarea name="notes" class="form-control" rows="3"></textarea>
+      <textarea name="notes" class="form-control" rows="3" placeholder="Record any defects or observations here..."></textarea>
     </div>
 
-    <button type="submit" class="btn btn-primary mt-2">Submit Check</button>
+    <button type="submit" class="btn btn-primary mt-3">Submit Check</button>
   </form>
 </div>
 {% endblock %}
