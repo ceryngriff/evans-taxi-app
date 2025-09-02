@@ -1068,55 +1068,88 @@ def view_staff_schedule_day(date_str):
 @app.route('/staff-calendar')
 @login_required
 def staff_calendar():
-    from calendar import monthcalendar
+    from calendar import monthcalendar, monthrange
     from datetime import datetime, timedelta, date
 
-    # Set current user details
     staff_id = current_user.id
-    staff_type = current_user.role
+    staff_type = current_user.role  # 'driver' or 'escort'
 
-    # Get the current month and year from URL or fallback to now
     year = request.args.get('year', default=datetime.now().year, type=int)
     month = request.args.get('month', default=datetime.now().month, type=int)
     cal = monthcalendar(year, month)
 
-    # Get school terms
+    # --- School terms: weekdays only ---
     terms = SchoolTerm.query.all()
     term_dates = set()
     for term in terms:
-        current = term.start_date
-        while current <= term.end_date:
-            if current.month == month and current.year == year:
-                term_dates.add(current)
-            current += timedelta(days=1)
+        cur = term.start_date
+        while cur <= term.end_date:
+            if cur.year == year and cur.month == month and cur.weekday() < 5:
+                term_dates.add(cur)
+            cur += timedelta(days=1)
 
-    # Get inset days
+    # --- Inset days ---
     inset_entries = InsetDay.query.filter(
         db.extract('year', InsetDay.date) == year,
         db.extract('month', InsetDay.date) == month
     ).all()
-    inset_dates = {entry.date for entry in inset_entries}
+    inset_dates = {e.date for e in inset_entries}
 
-    # Get staff's approved leave only
+    # --- This staff member's approved leave only ---
     leave_entries = Leave.query.filter_by(
-        person_id=staff_id,
-        person_type=staff_type,
-        approved=True
+        person_id=staff_id, person_type=staff_type, approved=True
     ).all()
     leave_dates = set()
-    for leave in leave_entries:
-        current = leave.start_date
-        while current <= leave.end_date:
-            if current.month == month and current.year == year:
-                leave_dates.add(current)
-            current += timedelta(days=1)
+    for lv in leave_entries:
+        cur = lv.start_date
+        while cur <= lv.end_date:
+            if cur.year == year and cur.month == month:
+                leave_dates.add(cur)
+            cur += timedelta(days=1)
 
-    # Determine weekends and out-of-term as non-school days
-    all_visible_days = [date(year, month, d) for week in cal for d in week if d != 0]
-    non_school_days = set()
+    # --- Compute non-school days (weekends or out-of-term and not inset) ---
+    all_visible_days = [date(year, month, d) for wk in cal for d in wk if d != 0]
+    non_school_days = {
+        d for d in all_visible_days
+        if d.weekday() >= 5 or (d not in term_dates and d not in inset_dates)
+    }
+
+    # ===== NEW: allocations for this staff member, per day =====
+    first_day = date(year, month, 1)
+    last_day = date(year, month, monthrange(year, month)[1])
+
+    # one-off allocations inside the month
+    one_time = DriverAllocation.query.filter(
+        DriverAllocation.contract_date >= first_day,
+        DriverAllocation.contract_date <= last_day
+    ).all()
+    # repeating allocations (weekly)
+    repeating = DriverAllocation.query.filter_by(repeat_all_week=True).all()
+
+    def belongs(a):
+        return ((staff_type == 'driver' and a.driver_id == staff_id) or
+                (staff_type == 'escort' and a.escort_id == staff_id))
+
+    one_time  = [a for a in one_time  if belongs(a)]
+    repeating = [a for a in repeating if belongs(a)]
+
+    staff_allocations_by_date = {}
     for d in all_visible_days:
-        if d.weekday() >= 5 or (d not in term_dates and d not in inset_dates):
-            non_school_days.add(d)
+        weekday = d.strftime('%A')
+        day_allocs = [a for a in one_time if a.contract_date == d]
+        for a in repeating:
+            if a.contract_days and any(weekday == x.strip() for x in a.contract_days.split(',')):
+                day_allocs.append(a)
+
+        if day_allocs:
+            staff_allocations_by_date[d] = [
+                {
+                    "contract_number": a.contract_number,
+                    "shift": (a.driver_shift if staff_type == 'driver' else a.escort_shift),
+                    "school_name": (a.contract.school_name if a.contract else "")
+                }
+                for a in day_allocs
+            ]
 
     return render_template(
         'staff_calendar.html',
@@ -1129,8 +1162,10 @@ def staff_calendar():
         leave_dates=leave_dates,
         non_school_days=non_school_days,
         date=date,
-        calendar_module=calendar
+        calendar_module=calendar,
+        staff_allocations_by_date=staff_allocations_by_date,  # <-- pass to template
     )
+
 
 @app.route('/admin-leave-requests')
 @login_required

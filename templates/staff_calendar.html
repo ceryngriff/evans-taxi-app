@@ -143,6 +143,14 @@
         font-size: 1rem;
       }
     }
+    .alloc-chip{
+  display:inline-flex; gap:.35rem; align-items:center;
+  padding:.2rem .5rem; border-radius:999px;
+  background:#67e8f9; color:#001018; font-weight:700; font-size:12px;
+  margin-top:.35rem;
+}
+.alloc-chip .shift{ opacity:.85; font-weight:600; margin-left:.15rem; }
+
   </style>
 </head>
 <body>
@@ -185,6 +193,11 @@
                   <td class="calendar-day {{ cell_class }}">
                     <a href="{{ url_for('view_staff_schedule_day', date_str=date(year, month, day).strftime('%Y-%m-%d')) }}">
                       <div class="day-number">{{ day }}</div>
+                      {% for alloc in staff_allocations_by_date.get(date_obj, []) %}
+                      <div class="alloc-chip" title="{{ alloc.school_name }}">
+                      🚍 {{ alloc.contract_number }}{% if alloc.shift %} <span class="shift">{{ alloc.shift }}</span>{% endif %}
+                      </div>
+                      {% endfor %}
 
                       {% if date_obj in term_dates %}
                         <span class="emoji-label">📘 School Day</span>
