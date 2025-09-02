@@ -14,7 +14,10 @@
           <th>Lights</th>
           <th>Tires</th>
           <th>Oil Level</th>
+          <th>Water</th>           {# NEW #}
+          <th>MOT Date</th>        {# NEW #}
           <th>Notes</th>
+          <th>Actions</th>         {# NEW #}
         </tr>
       </thead>
       <tbody>
@@ -27,7 +30,14 @@
           <td>{{ '✅' if c.lights_ok else '❌' }}</td>
           <td>{{ '✅' if c.tires_ok else '❌' }}</td>
           <td>{{ '✅' if c.oil_level_ok else '❌' }}</td>
+          <td>{{ '✅' if c.water_ok else '❌' }}</td>   {# NEW #}
+          <td>{{ c.mot_date }}</td>                    {# NEW #}
           <td>{{ c.notes }}</td>
+          <td>
+            <form method="post" action="{{ url_for('delete_vehicle_check', check_id=c.id) }}" onsubmit="return confirm('Delete this vehicle check?');">
+              <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+            </form>
+          </td>
         </tr>
         {% endfor %}
       </tbody>

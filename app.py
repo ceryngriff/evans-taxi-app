@@ -21,7 +21,7 @@ import os
 from geopy.distance import geodesic
 from geopy.geocoders import Nominatim
 import time
-from sqlalchemy import text
+from sqlalchemy import text, func 
 from sqlalchemy.exc import IntegrityError, DataError
 from utils.billing_utils import calculate_school_days_for_month
 
@@ -124,16 +124,16 @@ def manager_dashboard():
         Leave.end_date >= start_next_week
     ).all()
 
-    # Vehicle checks
-    upcoming_vehicle_checks = []
+    # 🔧 Maintenance deadlines (MOT/Tax/Plate) due soon — rename var to avoid confusion
+    upcoming_vehicle_deadlines = []
     for v in Vehicle.query.all():
         if (
-            (v.mot_renewal_date >= today and v.mot_renewal_date <= end_next_week) or
-            (v.mot_6_monthly_date and v.mot_6_monthly_date >= today and v.mot_6_monthly_date <= end_next_week) or
-            (v.plate_expiry_date >= today and v.plate_expiry_date <= end_next_week) or
-            (v.tax_expiry_date >= today and v.tax_expiry_date <= end_next_week)
+            (v.mot_renewal_date and today <= v.mot_renewal_date <= end_next_week) or
+            (v.mot_6_monthly_date and today <= v.mot_6_monthly_date <= end_next_week) or
+            (v.plate_expiry_date and today <= v.plate_expiry_date <= end_next_week) or
+            (v.tax_expiry_date and today <= v.tax_expiry_date <= end_next_week)
         ):
-            upcoming_vehicle_checks.append(v)
+            upcoming_vehicle_deadlines.append(v)
 
     drivers = Driver.query.all()
     escorts = Escort.query.all()
@@ -156,10 +156,18 @@ def manager_dashboard():
             'job_count': job_count
         })
 
+    # ✅ DAILY DRIVER VEHICLE CHECKS — who hasn’t submitted today
+    checks_today_q = db.session.query(VehicleCheck.staff_id).filter(
+        VehicleCheck.staff_type == 'driver',
+        func.date(VehicleCheck.date) == today
+    ).distinct().all()
+    checked_ids = {row[0] for row in checks_today_q}
+    missing_checks = [d for d in drivers if d.id not in checked_ids]
+
     return render_template(
         'index.html',
         upcoming_leave=upcoming_leave,
-        upcoming_vehicle_checks=upcoming_vehicle_checks,
+        upcoming_vehicle_deadlines=upcoming_vehicle_deadlines,  # <-- renamed
         drivers=drivers,
         escorts=escorts,
         current_date=today,
@@ -167,8 +175,10 @@ def manager_dashboard():
         timedelta=timedelta,
         runs=enriched_runs,
         upcoming_badge_renewals=upcoming_badge_renewals,
-        mechanics_with_jobs=mechanics_with_jobs 
+        mechanics_with_jobs=mechanics_with_jobs,
+        missing_checks=missing_checks   # <-- pass to template
     )
+
 
 @app.context_processor
 def inject_today():
@@ -1530,7 +1540,6 @@ def vehicle_check():
 
     return render_template('vehicle_check.html', vehicles=vehicles)
 
-
 @app.route('/manager/vehicle-checks')
 @role_required(['manager', 'mechanic'])
 def view_vehicle_checks():
@@ -1548,17 +1557,30 @@ def view_vehicle_checks():
             staff_name = escort.name if escort else "Unknown"
 
         enriched_checks.append({
-            'date': check.date.strftime('%Y-%m-%d'),
+            'id': check.id,  # <-- needed for delete
+            'date': check.date.strftime('%Y-%m-%d') if check.date else '—',
             'vehicle': f"{vehicle.registration} - {vehicle.make_model}" if vehicle else "Unknown",
             'staff_name': staff_name,
             'mileage': check.mileage,
             'lights_ok': check.lights_ok,
             'tires_ok': check.tires_ok,
             'oil_level_ok': check.oil_level_ok,
-            'notes': check.notes or '—'
+            'water_ok': bool(getattr(check, 'water_check', False)),  # <-- water
+            'mot_date': check.mot_date.strftime('%Y-%m-%d') if getattr(check, 'mot_date', None) else '—',
+            'notes': check.notes or '—',
         })
 
     return render_template('admin_vehicle_checks.html', checks=enriched_checks)
+
+@app.route('/manager/vehicle-checks/<int:check_id>/delete', methods=['POST'])
+@role_required(['manager', 'mechanic'])
+def delete_vehicle_check(check_id):
+    check = VehicleCheck.query.get_or_404(check_id)
+    db.session.delete(check)
+    db.session.commit()
+    flash('Vehicle check deleted.', 'info')
+    return redirect(url_for('view_vehicle_checks'))
+
 
 def calculate_quote(vehicle_type, tariff, mileage):
     rate_entry = TariffRate.query.filter_by(vehicle_type=vehicle_type, tariff=tariff).first()

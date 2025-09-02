@@ -101,34 +101,36 @@
     </div>
 
     <!-- 🚐 Vehicle Checks -->
-    <div class="info-box">
-        <h2 class="text-xl font-semibold text-gray-700 mb-3">🚌 Upcoming Vehicle Maintenance</h2>
-        {% if upcoming_vehicle_checks %}
-            <ul class="list-disc list-inside text-gray-700">
-                {% for vehicle in upcoming_vehicle_checks %}
-                    <li>
-                        {{ vehicle.registration }} — MOT: {{ vehicle.mot_renewal_date or 'N/A' }} |
-                        Plate: {{ vehicle.plate_expiry_date or 'N/A' }} |
-                        Tax: {{ vehicle.tax_expiry_date or 'N/A' }}
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p class="text-gray-600">No upcoming vehicle checks.</p>
-        {% endif %}
-    </div>
-    <div class="info-box">
-    <h3>🚨 Vehicle Checks Not Completed Today</h3>
-    {% if missing_checks %}
-      <ul>
-        {% for staff in missing_checks %}
-          <li>{{ staff.name }} (Driver ID: {{ staff.id }})</li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p>✅ All vehicle checks are done today.</p>
-    {% endif %}
-    </div>
+    <!-- 🚌 Upcoming Vehicle Maintenance Deadlines -->
+<div class="info-box">
+  <h2 class="text-xl font-semibold text-gray-700 mb-3">🚌 Upcoming Vehicle Maintenance</h2>
+  {% if upcoming_vehicle_deadlines %}
+    <ul class="list-disc list-inside text-gray-700">
+      {% for v in upcoming_vehicle_deadlines %}
+        <li>
+          {{ v.registration }}
+          {% if v.mot_renewal_date %} — MOT: {{ v.mot_renewal_date.strftime('%Y-%m-%d') }}{% endif %}
+          {% if v.plate_expiry_date %} | Plate: {{ v.plate_expiry_date.strftime('%Y-%m-%d') }}{% endif %}
+          {% if v.tax_expiry_date %} | Tax: {{ v.tax_expiry_date.strftime('%Y-%m-%d') }}{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-gray-600">No upcoming vehicle maintenance deadlines.</p>
+  {% endif %}
+</div>
+<div class="info-box">
+  <h3>🚨 Vehicle Checks Not Completed Today</h3>
+  {% if missing_checks is defined and missing_checks|length > 0 %}
+    <ul>
+      {% for staff in missing_checks %}
+        <li>{{ staff.name }} (Driver ID: {{ staff.id }})</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>✅ All vehicle checks are done today.</p>
+  {% endif %}
+</div>
        
     <!-- 🚨 Badge Renewals -->
 <div class="info-box">
